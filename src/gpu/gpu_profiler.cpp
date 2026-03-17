@@ -1,0 +1,1 @@
+#include "insight/gpu/gpu_profiler.h"
