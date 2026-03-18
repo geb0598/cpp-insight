@@ -59,6 +59,11 @@ public:
         stack_.pop_back();
     }
 
+    void Clear() {
+        stack_.clear();
+        frame_.clear();
+    }
+
 private:
     struct StackEntry {
         StatDescriptor::Id      id;

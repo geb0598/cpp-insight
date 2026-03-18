@@ -65,6 +65,8 @@ if(INSIGHT_BUILD_TESTS)
 
     enable_testing()
 
+    set(CMAKE_CTEST_ARGUMENTS "--no-compress-output")
+
     file(GLOB_RECURSE TEST_SOURCES "tests/src/*.cpp")
 
     add_executable(insight-test ${TEST_SOURCES})

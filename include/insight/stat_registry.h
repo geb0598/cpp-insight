@@ -150,9 +150,3 @@ inline StatGroup::StatGroup(std::string name)
 }
 
 } // namespace insight
-
-#define INSIGHT_DECLARE_STATGROUP(group_desc, group_id) \
-    static insight::StatGroup group_id(group_desc);
-
-#define INSIGHT_DECLARE_CYCLE_STAT(counter_name, stat_id, group_id) \
-    static insight::StatDescriptor stat_id(counter_name, group_id);
