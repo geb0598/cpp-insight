@@ -2,6 +2,8 @@
 
 #include <chrono>
 
+#include "insight/archive.h"
+
 namespace insight {
 
 class PlatformTime {
@@ -35,5 +37,14 @@ public:
         return To<std::ratio<1>>(duration);
     }
 };
+
+inline Archive& operator<<(Archive& ar, PlatformTime::Duration& duration) {
+    int64_t count = duration.count();
+    ar << count;
+    if (ar.IsLoading()) { 
+        duration = PlatformTime::Duration(count); 
+    }
+    return ar;
+}
 
 } // namespace insight
