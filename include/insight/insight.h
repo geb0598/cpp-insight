@@ -8,7 +8,7 @@
 #include "insight/stat_registry.h"
 
 // GPU (Windows only)
-#if defined(INSIGHT_PLATFORM_WINDOWS)
+#if defined(_WIN32)
 #include "insight/gpu/gpu_profiler.h"
 #endif
 

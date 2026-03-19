@@ -2,30 +2,23 @@ cmake_minimum_required(VERSION 3.16)
 project(cpp-insight VERSION 1.0.0 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 17)
-set(CMKAE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 # -----------------------------------------------
 # cpp-insight-core (header only)
 # -----------------------------------------------
-add_library(cpp-insight-core INTERFACE)
+add_library(cpp-insight-core 
+    STATIC 
+        src/pipe_transport.cpp
+)
 
 target_include_directories(cpp-insight-core
-    INTERFACE
+    PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
 
-target_compile_features(cpp-insight-core INTERFACE cxx_std_17)
-
-if(WIN32)
-    target_compile_definitions(cpp-insight-core 
-        INTERFACE INSIGHT_PLATFORM_WINDOWS=1
-    )
-elseif(UNIX AND NOT APPLE)
-    target_compile_definitions(cpp-insight-core 
-        INTERFACE INSIGHT_PLATFORM_LINUX=1
-    )
-endif()
+target_compile_features(cpp-insight-core PUBLIC cxx_std_17)
 
 # -----------------------------------------------
 # cpp-insight-gpu (static library)
@@ -67,7 +60,12 @@ if(INSIGHT_BUILD_TESTS)
 
     set(CMAKE_CTEST_ARGUMENTS "--no-compress-output")
 
-    file(GLOB_RECURSE TEST_SOURCES "tests/src/*.cpp")
+    set(TEST_SOURCES
+        tests/src/test_archive.cpp
+        tests/src/test_pipe_transport.cpp
+        tests/src/test_scope_profiler.cpp
+        tests/src/test_stat_registry.cpp
+    )
 
     add_executable(insight-test ${TEST_SOURCES})
 
