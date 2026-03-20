@@ -35,6 +35,15 @@
     insight::ScopeProfiler::GetInstance().EndFrame()
 
 // -------------------------------------------------
+// Client macros
+// -------------------------------------------------
+#define INSIGHT_INITIALIZE() \
+    insight::InsightClient::GetInstance().Connect()
+
+#define INSIGHT_SHUTDOWN() \
+    insight::InsightClient::GetInstance().Disconnect()
+
+// -------------------------------------------------
 // Session macros
 // -------------------------------------------------
 #define INSIGHT_SESSION_START() \

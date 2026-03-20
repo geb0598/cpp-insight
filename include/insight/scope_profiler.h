@@ -41,9 +41,11 @@ public:
 
     void BeginFrame() {
         frame_.clear();
+        BeginScope(StatDescriptor::GetFrameDescriptor());
     }
 
     FrameRecord EndFrame() {
+        EndScope();
         return std::move(frame_);
     }
 

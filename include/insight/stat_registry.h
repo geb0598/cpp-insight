@@ -18,12 +18,17 @@ public:
     using Id = int32_t;
 
     static constexpr Id INVALID_ID = -1;
+    static constexpr Id FRAME_ID   = 0;
 
     StatDescriptor() : id_(INVALID_ID), name_("") {}
 
     StatDescriptor(std::string name, StatGroup& group);
 
-    static Id   PeekId() { return next_id; }
+    static StatDescriptor& GetFrameDescriptor() {
+        static StatDescriptor instance(FRAME_ID, "");
+        return instance;
+    }
+    static Id PeekId() { return next_id; }
 
     Id                 GetId()    const { return id_; }
     const std::string& GetName()  const { return name_; }
@@ -35,9 +40,11 @@ public:
     }
 
 private:
+    StatDescriptor(Id id, std::string name);
+
     static Id NextId() { return next_id++; }
 
-    static inline Id next_id = 0;
+    static inline Id next_id = 1;
 
     Id          id_;
     std::string name_;
@@ -52,12 +59,17 @@ public:
     using Id = int32_t;
 
     static constexpr Id INVALID_ID = -1;
+    static constexpr Id FRAME_ID   = 0;
 
     StatGroup() : id_(INVALID_ID), name_("") {}
 
     explicit StatGroup(std::string name);
 
-    static Id   PeekId() { return next_id; }
+    static StatGroup& GetFrameGroup() {
+        static StatGroup instance(FRAME_ID, "");
+        return instance;
+    }
+    static Id PeekId() { return next_id; }
 
     Id                 GetId()   const { return id_; }
     const std::string& GetName() const { return name_; }
@@ -74,9 +86,11 @@ public:
     }
 
 private:
+    StatGroup(Id id, std::string name);
+
     static Id   NextId() { return next_id++; }
 
-    static inline Id next_id = 0;
+    static inline Id next_id = 1;
 
     Id                              id_;
     std::string                     name_;
@@ -143,9 +157,19 @@ inline StatDescriptor::StatDescriptor(std::string name, StatGroup& group)
     group.AddDescriptor(id_);
     StatRegistry::GetInstance().RegisterDescriptor(this);
 }
+inline StatDescriptor::StatDescriptor(Id id, std::string name)
+    : id_(id), name_(std::move(name)) {
+    StatGroup::GetFrameGroup().AddDescriptor(id_);
+    StatRegistry::GetInstance().RegisterDescriptor(this);
+}
 
 inline StatGroup::StatGroup(std::string name)
     : id_(NextId()), name_(std::move(name)) {
+    StatRegistry::GetInstance().RegisterGroup(this);
+}
+
+inline StatGroup::StatGroup(Id id, std::string name) 
+    : id_(id), name_(std::move(name)) {
     StatRegistry::GetInstance().RegisterGroup(this);
 }
 
