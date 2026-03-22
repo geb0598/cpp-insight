@@ -5,7 +5,7 @@
 #include "insight/platform_time.h"
 #include "insight/scope_profiler.h"
 // #include "insight/stat_aggregator.h"
-#include "insight/stat_registry.h"
+#include "insight/registry.h"
 
 // GPU (Windows only)
 #if defined(_WIN32)
@@ -17,10 +17,10 @@
 // -------------------------------------------------
 
 #define INSIGHT_DECLARE_STATGROUP(display_name, variable_name) \
-    static insight::StatGroup variable_name(display_name);
+    static insight::Group variable_name(display_name);
 
 #define INSIGHT_DECLARE_CYCLE_STAT(display_name, variable_name, group) \
-    static insight::StatDescriptor variable_name(display_name, group);
+    static insight::Descriptor variable_name(display_name, group);
 
 // -------------------------------------------------
 // Profiling macros
@@ -38,10 +38,10 @@
 // Client macros
 // -------------------------------------------------
 #define INSIGHT_INITIALIZE() \
-    insight::InsightClient::GetInstance().Connect()
+    insight::Client::GetInstance().Connect()
 
 #define INSIGHT_SHUTDOWN() \
-    insight::InsightClient::GetInstance().Disconnect()
+    insight::Client::GetInstance().Disconnect()
 
 // -------------------------------------------------
 // Session macros

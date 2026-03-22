@@ -1,10 +1,9 @@
-#include "insight/insight_client.h"
+#include "insight/client.h"
 #include "insight/archive.h"
-#include "insight/stat_aggregator.h"
 
 namespace insight {
 
-TransportResult InsightClient::Connect() {
+TransportResult Client::Connect() {
     auto result = transport_.Connect();
     if (!result) {
         return result;
@@ -16,13 +15,13 @@ TransportResult InsightClient::Connect() {
     }
 
     is_running_ = true;
-    send_thread_ = std::thread(&InsightClient::SendWorker, this);
-    recv_thread_ = std::thread(&InsightClient::RecvWorker, this);
+    send_thread_ = std::thread(&Client::SendWorker, this);
+    recv_thread_ = std::thread(&Client::RecvWorker, this);
 
     return TransportResult::Ok();
 }
 
-void InsightClient::Disconnect() {
+void Client::Disconnect() {
     is_running_ = false;
     cv_.notify_all();
 
@@ -32,7 +31,7 @@ void InsightClient::Disconnect() {
     transport_.Disconnect();
 }
 
-void InsightClient::SendFrame(FrameRecord frame) {
+void Client::SendFrame(FrameRecord frame) {
     if (!is_running_ || !is_session_active_) {
         return;
     }
@@ -44,11 +43,11 @@ void InsightClient::SendFrame(FrameRecord frame) {
     cv_.notify_one();
 }
 
-TransportResult InsightClient::SendHandshake() {
+TransportResult Client::SendHandshake() {
     BinaryWriter writer;
 
-    auto& groups = StatRegistry::GetInstance().GetGroups();
-    auto& descs  = StatRegistry::GetInstance().GetDescriptors();
+    auto& groups = Registry::GetInstance().GetGroups();
+    auto& descs  = Registry::GetInstance().GetDescriptors();
 
     int32_t group_count = static_cast<int32_t>(groups.size());
     writer << group_count;
@@ -65,11 +64,11 @@ TransportResult InsightClient::SendHandshake() {
     return transport_.Send(PacketType::HANDSHAKE, writer.GetBuffer());
 }
 
-void InsightClient::OnSessionStart() { is_session_active_ = true; }
+void Client::OnSessionStart() { is_session_active_ = true; }
 
-void InsightClient::OnSessionStop()  { is_session_active_ = false; }
+void Client::OnSessionStop()  { is_session_active_ = false; }
 
-void InsightClient::SendWorker() {
+void Client::SendWorker() {
     while (is_running_) {
         std::unique_lock<std::mutex> lock(mutex_);
         cv_.wait(lock, [this]() {
@@ -95,7 +94,7 @@ void InsightClient::SendWorker() {
     }
 }
 
-void InsightClient::RecvWorker() {
+void Client::RecvWorker() {
     while (is_running_) {
         PacketType type;
         ByteBuffer data;

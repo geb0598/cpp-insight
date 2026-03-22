@@ -10,7 +10,10 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 # -----------------------------------------------
 add_library(cpp-insight-core 
     STATIC 
+        src/client.cpp
         src/pipe_transport.cpp
+        src/reporter.cpp 
+        src/server.cpp
 )
 
 target_include_directories(cpp-insight-core
@@ -63,8 +66,9 @@ if(INSIGHT_BUILD_TESTS)
     set(TEST_SOURCES
         tests/src/test_archive.cpp
         tests/src/test_pipe_transport.cpp
+        tests/src/test_registry.cpp
+        tests/src/test_reporter.cpp
         tests/src/test_scope_profiler.cpp
-        tests/src/test_stat_registry.cpp
     )
 
     add_executable(insight-test ${TEST_SOURCES})

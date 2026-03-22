@@ -2,7 +2,7 @@
 
 #include "insight/archive.h"
 #include "insight/platform_time.h"
-#include "insight/stat_registry.h"
+#include "insight/registry.h"
 
 namespace insight {
 
@@ -10,7 +10,7 @@ namespace insight {
 // ScopeRecord
 // -------------------------------------------------
 struct ScopeRecord {
-    StatDescriptor::Id     id;
+    Descriptor::Id         id;
     PlatformTime::Duration duration;
     int                    depth;
 };
@@ -41,7 +41,7 @@ public:
 
     void BeginFrame() {
         frame_.clear();
-        BeginScope(StatDescriptor::GetFrameDescriptor());
+        BeginScope(Descriptor::GetFrameDescriptor());
     }
 
     FrameRecord EndFrame() {
@@ -49,7 +49,7 @@ public:
         return std::move(frame_);
     }
 
-    void BeginScope(const StatDescriptor& stat) {
+    void BeginScope(const Descriptor& stat) {
         int depth = static_cast<int>(stack_.size());
         stack_.push_back({stat.GetId(), PlatformTime::Now(), depth});
     }
@@ -68,7 +68,7 @@ public:
 
 private:
     struct StackEntry {
-        StatDescriptor::Id      id;
+        Descriptor::Id          id;
         PlatformTime::TimePoint start;
         int                     depth;
     };
@@ -85,7 +85,7 @@ private:
 // -------------------------------------------------
 class ScopeTimer {
 public:
-    explicit ScopeTimer(const StatDescriptor& stat) {
+    explicit ScopeTimer(const Descriptor& stat) {
         ScopeProfiler::GetInstance().BeginScope(stat);
     }
 

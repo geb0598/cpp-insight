@@ -9,29 +9,29 @@
 
 #include "insight/pipe_transport.h"
 #include "insight/scope_profiler.h"
-#include "insight/stat_registry.h"
+#include "insight/registry.h"
 
 namespace insight {
 
-class InsightClient {
+class Client {
 public:
-    static InsightClient& GetInstance() {
-        static InsightClient instance;
+    static Client& GetInstance() {
+        static Client instance;
         return instance;
     }
 
-    InsightClient(const InsightClient&)            = delete;
-    InsightClient& operator=(const InsightClient&) = delete;
-    InsightClient(InsightClient&&)                 = delete;
-    InsightClient& operator=(InsightClient&&)      = delete;
+    Client(const Client&)            = delete;
+    Client& operator=(const Client&) = delete;
+    Client(Client&&)                 = delete;
+    Client& operator=(Client&&)      = delete;
 
     TransportResult Connect();
     void            Disconnect();
     void            SendFrame(FrameRecord frame);
 
 private:
-    InsightClient() = default;
-    ~InsightClient() { Disconnect(); }
+    Client() = default;
+    ~Client() { Disconnect(); }
 
     TransportResult SendHandshake();
 

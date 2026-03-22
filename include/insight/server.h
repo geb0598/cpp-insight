@@ -8,21 +8,21 @@
 
 #include "insight/pipe_transport.h"
 #include "insight/scope_profiler.h"
-#include "insight/stat_registry.h"
+#include "insight/registry.h"
 
 namespace insight {
 
-class InsightServer {
+class Server {
 public:
-    static InsightServer& GetInstance() {
-        static InsightServer instance;
+    static Server& GetInstance() {
+        static Server instance;
         return instance;
     }
 
-    InsightServer(const InsightServer&)            = delete;
-    InsightServer& operator=(const InsightServer&) = delete;
-    InsightServer(InsightServer&&)                 = delete;
-    InsightServer& operator=(InsightServer&&)      = delete;
+    Server(const Server&)            = delete;
+    Server& operator=(const Server&) = delete;
+    Server(Server&&)                 = delete;
+    Server& operator=(Server&&)      = delete;
 
     TransportResult              Listen();
     std::future<TransportResult> Accept();
@@ -39,16 +39,16 @@ public:
     void Clear() { frames_.clear(); }
 
 private:
-    InsightServer() = default;
-    ~InsightServer() { Disconnect(); }
+    Server() = default;
+    ~Server() { Disconnect(); }
 
     void RecvWorker();
 
     void OnHandshake(const ByteBuffer& data);
     void OnFrame(const ByteBuffer& data);
 
-    std::vector<std::unique_ptr<StatGroup>>      owned_groups_;
-    std::vector<std::unique_ptr<StatDescriptor>> owned_descs_;
+    std::vector<std::unique_ptr<Group>>      owned_groups_;
+    std::vector<std::unique_ptr<Descriptor>> owned_descs_;
 
     PipeServer              transport_;
     std::thread             recv_thread_;

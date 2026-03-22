@@ -9,23 +9,23 @@
 namespace insight {
 
 // -------------------------------------------------
-// StatDescriptor
+// Descriptor
 // -------------------------------------------------
-class StatGroup;
+class Group;
 
-class StatDescriptor {
+class Descriptor {
 public:
     using Id = int32_t;
 
     static constexpr Id INVALID_ID = -1;
     static constexpr Id FRAME_ID   = 0;
 
-    StatDescriptor() : id_(INVALID_ID), name_("") {}
+    Descriptor() : id_(INVALID_ID), name_("") {}
 
-    StatDescriptor(std::string name, StatGroup& group);
+    Descriptor(std::string name, Group& group);
 
-    static StatDescriptor& GetFrameDescriptor() {
-        static StatDescriptor instance(FRAME_ID, "");
+    static Descriptor& GetFrameDescriptor() {
+        static Descriptor instance(FRAME_ID, "");
         return instance;
     }
     static Id PeekId() { return next_id; }
@@ -33,14 +33,14 @@ public:
     Id                 GetId()    const { return id_; }
     const std::string& GetName()  const { return name_; }
 
-    friend Archive& operator<<(Archive& ar, StatDescriptor& descriptor) {
+    friend Archive& operator<<(Archive& ar, Descriptor& descriptor) {
         ar << descriptor.id_;
         ar << descriptor.name_;
         return ar;
     }
 
 private:
-    StatDescriptor(Id id, std::string name);
+    Descriptor(Id id, std::string name);
 
     static Id NextId() { return next_id++; }
 
@@ -51,22 +51,22 @@ private:
 };
 
 // -------------------------------------------------
-// StatGroup
+// Group
 // -------------------------------------------------
 
-class StatGroup {
+class Group {
 public:
     using Id = int32_t;
 
     static constexpr Id INVALID_ID = -1;
     static constexpr Id FRAME_ID   = 0;
 
-    StatGroup() : id_(INVALID_ID), name_("") {}
+    Group() : id_(INVALID_ID), name_("") {}
 
-    explicit StatGroup(std::string name);
+    explicit Group(std::string name);
 
-    static StatGroup& GetFrameGroup() {
-        static StatGroup instance(FRAME_ID, "");
+    static Group& GetFrameGroup() {
+        static Group instance(FRAME_ID, "");
         return instance;
     }
     static Id PeekId() { return next_id; }
@@ -74,11 +74,11 @@ public:
     Id                 GetId()   const { return id_; }
     const std::string& GetName() const { return name_; }
 
-    void AddDescriptor(StatDescriptor::Id desc_id) { descriptors_.push_back(desc_id); }
+    void AddDescriptor(Descriptor::Id desc_id) { descriptors_.push_back(desc_id); }
 
-    const std::vector<StatDescriptor::Id>& GetDescriptors() const { return descriptors_; }
+    const std::vector<Descriptor::Id>& GetDescriptors() const { return descriptors_; }
 
-    friend Archive& operator<<(Archive& ar, StatGroup& group) {
+    friend Archive& operator<<(Archive& ar, Group& group) {
         ar << group.id_;
         ar << group.name_;
         ar << group.descriptors_;
@@ -86,7 +86,7 @@ public:
     }
 
 private:
-    StatGroup(Id id, std::string name);
+    Group(Id id, std::string name);
 
     static Id   NextId() { return next_id++; }
 
@@ -94,35 +94,35 @@ private:
 
     Id                              id_;
     std::string                     name_;
-    std::vector<StatDescriptor::Id> descriptors_;
+    std::vector<Descriptor::Id> descriptors_;
 };
 
 // -------------------------------------------------
-// StatRegistry
+// Registry
 // -------------------------------------------------
-class StatRegistry {
+class Registry {
 public:
-    using DescriptorMap  = std::unordered_map<StatDescriptor::Id, StatDescriptor*>;
-    using GroupMap       = std::unordered_map<StatGroup::Id, StatGroup*>;
+    using DescriptorMap  = std::unordered_map<Descriptor::Id, Descriptor*>;
+    using GroupMap       = std::unordered_map<Group::Id, Group*>;
 
-    static StatRegistry& GetInstance() {
-        static StatRegistry instance;
+    static Registry& GetInstance() {
+        static Registry instance;
         return instance;
     }
 
-    StatRegistry(const StatRegistry&)            = delete;
-    StatRegistry& operator=(const StatRegistry&) = delete;
-    StatRegistry(StatRegistry&&)                 = delete;
-    StatRegistry& operator=(StatRegistry&&)      = delete;
+    Registry(const Registry&)            = delete;
+    Registry& operator=(const Registry&) = delete;
+    Registry(Registry&&)                 = delete;
+    Registry& operator=(Registry&&)      = delete;
 
-    void RegisterDescriptor(StatDescriptor* descriptor) { descriptors_[descriptor->GetId()] = descriptor; }
-    void RegisterGroup(StatGroup* group) { groups_[group->GetId()] = group; }
+    void RegisterDescriptor(Descriptor* descriptor) { descriptors_[descriptor->GetId()] = descriptor; }
+    void RegisterGroup(Group* group) { groups_[group->GetId()] = group; }
     void Clear() {
         descriptors_.clear();
         groups_.clear();
     }
 
-    StatDescriptor* FindDescriptor(StatDescriptor::Id id) const {
+    Descriptor* FindDescriptor(Descriptor::Id id) const {
         auto it = descriptors_.find(id);
         if (it == descriptors_.end()) {
             return nullptr;
@@ -130,7 +130,7 @@ public:
         return it->second;
     }
 
-    StatGroup* FindGroup(StatGroup::Id id) const {
+    Group* FindGroup(Group::Id id) const {
         auto it = groups_.find(id);
         if (it == groups_.end()) {
             return nullptr;
@@ -142,8 +142,8 @@ public:
     const GroupMap&      GetGroups()       const { return groups_; }
 
 private:
-    StatRegistry()  = default;
-    ~StatRegistry() = default;
+    Registry()  = default;
+    ~Registry() = default;
 
     DescriptorMap descriptors_;
     GroupMap      groups_;
@@ -152,25 +152,25 @@ private:
 // -------------------------------------------------
 // Implementations
 // -------------------------------------------------
-inline StatDescriptor::StatDescriptor(std::string name, StatGroup& group)
+inline Descriptor::Descriptor(std::string name, Group& group)
     : id_(NextId()), name_(std::move(name)) {
     group.AddDescriptor(id_);
-    StatRegistry::GetInstance().RegisterDescriptor(this);
+    Registry::GetInstance().RegisterDescriptor(this);
 }
-inline StatDescriptor::StatDescriptor(Id id, std::string name)
+inline Descriptor::Descriptor(Id id, std::string name)
     : id_(id), name_(std::move(name)) {
-    StatGroup::GetFrameGroup().AddDescriptor(id_);
-    StatRegistry::GetInstance().RegisterDescriptor(this);
+    Group::GetFrameGroup().AddDescriptor(id_);
+    Registry::GetInstance().RegisterDescriptor(this);
 }
 
-inline StatGroup::StatGroup(std::string name)
+inline Group::Group(std::string name)
     : id_(NextId()), name_(std::move(name)) {
-    StatRegistry::GetInstance().RegisterGroup(this);
+    Registry::GetInstance().RegisterGroup(this);
 }
 
-inline StatGroup::StatGroup(Id id, std::string name) 
+inline Group::Group(Id id, std::string name) 
     : id_(id), name_(std::move(name)) {
-    StatRegistry::GetInstance().RegisterGroup(this);
+    Registry::GetInstance().RegisterGroup(this);
 }
 
 } // namespace insight
