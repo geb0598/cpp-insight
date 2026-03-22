@@ -7,6 +7,9 @@
 
 namespace insight {
 
+// -------------------------------------------------
+// Reporter
+// -------------------------------------------------
 class Reporter {
 public:
     static Reporter& GetInstance() {
@@ -22,6 +25,8 @@ public:
     void   Submit(FrameRecord frame);
     void   Clear();
     size_t Size() const { return frames_.size(); }
+
+    const std::vector<FrameRecord>& GetFrames() const { return frames_; }
 
     std::vector<GroupSummary> SummarizeByGroup(size_t count) const;
     std::vector<StackSummary> SummarizeByStack(size_t begin, size_t end) const;

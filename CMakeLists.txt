@@ -45,6 +45,15 @@ else()
 endif()
 
 # -----------------------------------------------
+# cpp-insight-viewer 
+# -----------------------------------------------
+
+option(INSIGHT_BUILD_VIEWER "Build viewer" ON)
+if(INSIGHT_BUILD_VIEWER)
+    add_subdirectory(viewer)
+endif()
+
+# -----------------------------------------------
 # Tests
 # -----------------------------------------------
 option(INSIGHT_BUILD_TESTS "Build tests" OFF)
