@@ -61,6 +61,7 @@ add_executable(cpp-insight-viewer WIN32
 target_include_directories(cpp-insight-viewer
     PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/include
+        ${CMAKE_SOURCE_DIR}/src
 )
 
 target_link_libraries(cpp-insight-viewer
