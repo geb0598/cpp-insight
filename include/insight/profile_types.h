@@ -34,4 +34,10 @@ struct StackSummary {
     size_t         count;
 };
 
+struct TimelineSummary {
+    std::vector<float>                                     total_frame_ms;
+    std::vector<float>                                     unaccounted_ms;
+    std::unordered_map<Descriptor::Id, std::vector<float>> tracks;
+};
+
 } // namespace insight

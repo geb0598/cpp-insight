@@ -1,46 +1,92 @@
-#include "insight/client.h"
 #include "insight/archive.h"
+#include "insight/client.h"
 
 namespace insight {
 
-TransportResult Client::Connect() {
-    auto result = transport_.Connect();
-    if (!result) {
-        return result;
+void Client::Connect() {
+    if (connect_thread_.joinable()) {
+        connect_thread_.join();
     }
-
-    result = SendHandshake();
-    if (!result) {
-        return result;
-    }
-
-    is_running_ = true;
-    send_thread_ = std::thread(&Client::SendWorker, this);
-    recv_thread_ = std::thread(&Client::RecvWorker, this);
-
-    return TransportResult::Ok();
+    connect_thread_ = std::thread(&Client::ConnectWorker, this);
 }
 
 void Client::Disconnect() {
-    is_running_ = false;
-    cv_.notify_all();
+    is_session_active_ = false;
+    data_pipe_.Disconnect();
+    control_pipe_.Disconnect();
+    StopWorkers();
+    NotifyDisconnected();
 
-    if (send_thread_.joinable()) send_thread_.join();
-    if (recv_thread_.joinable()) recv_thread_.join();
-
-    transport_.Disconnect();
+    if (connect_thread_.joinable()) {
+        connect_thread_.join();
+    }
 }
 
 void Client::SendFrame(FrameRecord frame) {
-    if (!is_running_ || !is_session_active_) {
+    if (!IsRunning() || !is_session_active_) {
         return;
     }
 
-    {
-        std::lock_guard<std::mutex> lock(mutex_);
-        queue_.push(std::move(frame));
+    BinaryWriter writer;
+    writer << frame;
+    EnqueuePacket(PacketType::FRAME, std::move(writer).GetBuffer());
+}
+
+TransportResult Client::Send(PacketType type, const ByteBuffer& payload) {
+    return data_pipe_.Send(type, payload);
+}
+
+TransportResult Client::Receive(PacketHeader& out_header, ByteBuffer& out_payload) {
+    return control_pipe_.Receive(out_header, out_payload);
+}
+
+void Client::OnPacketReceived(const PacketHeader& header, const ByteBuffer& payload) {
+    switch (header.type) {
+    case PacketType::SESSION_START:
+        OnSessionStart();
+        break;
+    case PacketType::SESSION_STOP:
+        OnSessionStop();
+        break;
+    default:
+        break;
     }
-    cv_.notify_one();
+}
+
+void Client::OnDisconnected() {
+    is_session_active_ = false;
+    data_pipe_.Disconnect();
+    control_pipe_.Disconnect();
+    NotifyDisconnected();
+}
+
+void Client::ConnectWorker() {
+    while (!IsRunning()) {
+        auto data_result = data_pipe_.Connect(DATA_PIPE_NAME, GENERIC_WRITE);
+        if (!data_result) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(500));
+            continue;
+        }
+
+        auto control_result = control_pipe_.Connect(CONTROL_PIPE_NAME, GENERIC_READ);
+        if (!control_result) {
+            data_pipe_.Disconnect();
+            std::this_thread::sleep_for(std::chrono::milliseconds(500));
+            continue;
+        }
+
+        auto handshake_result = SendHandshake();
+        if (!handshake_result) {
+            data_pipe_.Disconnect();
+            control_pipe_.Disconnect();
+            std::this_thread::sleep_for(std::chrono::milliseconds(500));
+            continue;
+        }
+
+        NotifyConnected();
+        StartWorkers();
+        return;
+    }
 }
 
 TransportResult Client::SendHandshake() {
@@ -51,75 +97,17 @@ TransportResult Client::SendHandshake() {
 
     int32_t group_count = static_cast<int32_t>(groups.size());
     writer << group_count;
-    for (auto& [id, group] : groups) { 
-        writer << *group; 
+    for (auto& [id, group] : groups) {
+        writer << *group;
     }
 
     int32_t desc_count = static_cast<int32_t>(descs.size());
     writer << desc_count;
-    for (auto& [id, desc] : descs) { 
-        writer << *desc; 
+    for (auto& [id, desc] : descs) {
+        writer << *desc;
     }
 
-    return transport_.Send(PacketType::HANDSHAKE, writer.GetBuffer());
-}
-
-void Client::OnSessionStart() { is_session_active_ = true; }
-
-void Client::OnSessionStop()  { is_session_active_ = false; }
-
-void Client::SendWorker() {
-    while (is_running_) {
-        std::unique_lock<std::mutex> lock(mutex_);
-        cv_.wait(lock, [this]() {
-            return !queue_.empty() || !is_running_ || !is_session_active_;
-        });
-
-        if (!is_running_ && queue_.empty()) {
-            return;
-        }
-
-        FrameRecord frame = std::move(queue_.front());
-        queue_.pop();
-        lock.unlock();
-
-        BinaryWriter writer;
-        writer << frame;
-
-        auto result = transport_.Send(PacketType::FRAME, writer.GetBuffer());
-        if (!result && result.IsDisconnected()) {
-            is_running_ = false;
-            return;
-        }
-    }
-}
-
-void Client::RecvWorker() {
-    while (is_running_) {
-        PacketType type;
-        ByteBuffer data;
-
-        auto result = transport_.Receive(type, data);
-        if (!result) {
-            if (result.IsDisconnected()) {
-                is_running_        = false;
-                is_session_active_ = false;
-                cv_.notify_all();
-            }
-            return;
-        }
-
-        switch (type) {
-        case PacketType::SESSION_START:
-            OnSessionStart();
-            break;
-        case PacketType::SESSION_STOP:
-            OnSessionStop();
-            break;
-        default:
-            break;
-        }
-    }
+    return Send(PacketType::HANDSHAKE, std::move(writer).GetBuffer());
 }
 
 } // namespace insight

@@ -59,10 +59,11 @@ struct [[nodiscard]] TransportResult {
 // PacketType
 // -------------------------------------------------
 enum class PacketType : uint8_t {
-    HANDSHAKE     = 0,
-    FRAME         = 1,
-    SESSION_START = 2,
-    SESSION_STOP  = 3,
+    NONE          = 0,
+    HANDSHAKE     = 1,
+    FRAME         = 2,
+    SESSION_START = 3,
+    SESSION_STOP  = 4,
 };
 
 // -------------------------------------------------
@@ -70,8 +71,8 @@ enum class PacketType : uint8_t {
 // -------------------------------------------------
 #pragma pack(push, 1)
 struct PacketHeader {
-    PacketType type;
-    uint32_t   payload_size;
+    PacketType type         = PacketType::NONE;
+    uint32_t   payload_size = 0;
 };
 #pragma pack(pop)
 
@@ -82,12 +83,12 @@ class IClientTransport {
 public:
     virtual ~IClientTransport() = default;
 
-    virtual TransportResult Connect()           = 0;
-    virtual void            Disconnect()        = 0;
-    virtual bool            IsConnected() const = 0;
+    virtual TransportResult Connect(const wchar_t* pipe_name, DWORD access) = 0;
+    virtual void            Disconnect()                                    = 0;
+    virtual bool            IsConnected() const                             = 0;
 
-    virtual TransportResult Send(PacketType type, const ByteBuffer& data) = 0;
-    virtual TransportResult Receive(PacketType& out_type, ByteBuffer& out_data)   = 0;
+    virtual TransportResult Send(PacketType type, const ByteBuffer& payload)           = 0;
+    virtual TransportResult Receive(PacketHeader& out_header, ByteBuffer& out_payload) = 0;
 };
 
 // -------------------------------------------------
@@ -97,13 +98,13 @@ class IServerTransport {
 public:
     virtual ~IServerTransport() = default;
 
-    virtual TransportResult Listen()            = 0;
-    virtual TransportResult Accept()            = 0;
-    virtual void            Disconnect()        = 0;
-    virtual bool            IsConnected() const = 0;
+    virtual TransportResult Listen(const wchar_t* pipe_name, DWORD access) = 0;
+    virtual TransportResult Accept()                                       = 0;
+    virtual void            Disconnect()                                   = 0;
+    virtual bool            IsConnected() const                            = 0;
 
-    virtual TransportResult Send(PacketType type, const ByteBuffer& data) = 0;
-    virtual TransportResult Receive(PacketType& out_type, ByteBuffer& out_data)   = 0;
+    virtual TransportResult Send(PacketType type, const ByteBuffer& payload)           = 0;
+    virtual TransportResult Receive(PacketHeader& out_header, ByteBuffer& out_payload) = 0;
 };
 
 } // namespace insight

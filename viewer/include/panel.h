@@ -8,6 +8,7 @@ namespace insight::viewer {
 struct PanelContext {
     bool is_connected     = false;
     bool is_recording     = false;
+    bool needs_reset      = false;
     size_t timeline_begin = 0;
     size_t timeline_end   = 0;
 };

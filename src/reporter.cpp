@@ -8,14 +8,18 @@
 namespace insight {
 
 void Reporter::Submit(FrameRecord frame) {
+    std::lock_guard<std::mutex> lock(mutex_);
     frames_.push_back(std::move(frame));
 }
 
 void Reporter::Clear() {
+    std::lock_guard<std::mutex> lock(mutex_);
     frames_.clear();
 }
 
 std::vector<GroupSummary> Reporter::SummarizeByGroup(size_t count) const {
+    std::lock_guard<std::mutex> lock(mutex_);
+
     if (frames_.empty()) {
         return {};
     }
@@ -148,6 +152,49 @@ std::vector<StackSummary> Reporter::SummarizeByStack(size_t begin, size_t end) c
     }
 
     return result;
+}
+
+TimelineSummary Reporter::GetTimelineSummary() const {
+    std::lock_guard<std::mutex> lock(mutex_);
+    TimelineSummary summary;
+    size_t frame_count = frames_.size();
+
+    if (frame_count == 0) {
+        return summary;
+    }
+
+    summary.total_frame_ms.resize(frame_count, 0.0f);
+    summary.unaccounted_ms.resize(frame_count, 0.0f);
+
+    for (size_t i = 0; i < frame_count; ++i) {
+        for (const auto& record : frames_[i]) {
+            if (record.depth == 1) {
+                if (summary.tracks.find(record.id) == summary.tracks.end()) {
+                    summary.tracks[record.id].resize(frame_count, 0.0f);
+                }
+            }
+        }
+    }
+
+    for (size_t i = 0; i < frame_count; ++i) {
+        double frame_total = 0.0;
+        double sum = 0.0;
+
+        for (const auto& record : frames_[i]) {
+            if (record.id == Descriptor::FRAME_ID) {
+                frame_total = PlatformTime::ToMilli(record.duration);
+                summary.total_frame_ms[i] = static_cast<float>(frame_total);
+            } else if (record.depth == 1) {
+                double ms = PlatformTime::ToMilli(record.duration);
+                summary.tracks[record.id][i] += static_cast<float>(ms);
+                sum += ms;
+            }
+        }
+
+        summary.unaccounted_ms[i] = static_cast<float>(std::max(0.0, frame_total - sum));
+    }
+
+    return summary;
 }
 
 TimingSummary Reporter::ComputeTiming(std::vector<double> ms_values) const {

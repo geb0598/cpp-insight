@@ -9,6 +9,8 @@
 #include <imgui_impl_win32.h>
 #include <imgui_impl_dx11.h>
 
+#include <implot.h>
+
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp);
 
 namespace insight::viewer {
@@ -25,6 +27,7 @@ bool Viewer::Init(HWND hwnd) {
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
     ImGui::StyleColorsDark();
+    ImPlot::CreateContext();
 
     ImGui_ImplWin32_Init(hwnd);
     ImGui_ImplDX11_Init(device_.Get(), context_.Get());
@@ -39,6 +42,7 @@ bool Viewer::Init(HWND hwnd) {
 }
 
 void Viewer::Shutdown() {
+    ImPlot::DestroyContext();
     ImGui_ImplDX11_Shutdown();
     ImGui_ImplWin32_Shutdown();
     ImGui::DestroyContext();
@@ -59,7 +63,10 @@ void Viewer::Run() {
             break;
         }
 
-        CheckConnection();
+        if (ctx_.needs_reset) {
+            Reset();
+            ctx_.needs_reset = false;
+        }
 
         BeginFrame();
         Render();
@@ -113,11 +120,13 @@ bool Viewer::InitDX11(HWND hwnd) {
 
 bool Viewer::InitServer() {
     auto& server = insight::Server::GetInstance();
-    auto result  = server.Listen();
-    if (!result) {
-        return false;
-    }
-    accept_future_ = server.Accept();
+    server.SetOnConnected([this]() {
+        ctx_.is_connected = true;
+    });
+    server.SetOnDisconnected([this](){
+        ctx_.is_connected = false;
+        ctx_.is_recording = false;
+    });
     return true;
 }
 
@@ -128,17 +137,6 @@ void Viewer::Resize(UINT width, UINT height) {
     Microsoft::WRL::ComPtr<ID3D11Texture2D> back_buffer;
     swap_chain_->GetBuffer(0, IID_PPV_ARGS(back_buffer.GetAddressOf()));
     device_->CreateRenderTargetView(back_buffer.Get(), nullptr, rtv_.GetAddressOf());
-}
-
-void Viewer::CheckConnection() {
-    if (!accept_future_.valid()) {
-        return;
-    }
-
-    if (accept_future_.wait_for(std::chrono::milliseconds(0)) == std::future_status::ready) {
-        auto result       = accept_future_.get();
-        ctx_.is_connected = static_cast<bool>(result);
-    }
 }
 
 void Viewer::BeginFrame() {

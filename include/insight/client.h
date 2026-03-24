@@ -7,13 +7,14 @@
 #include <queue>
 #include <thread>
 
+#include "insight/connection.h"
 #include "insight/pipe_transport.h"
 #include "insight/scope_profiler.h"
 #include "insight/registry.h"
 
 namespace insight {
 
-class Client {
+class Client : public Connection {
 public:
     static Client& GetInstance() {
         static Client instance;
@@ -25,30 +26,32 @@ public:
     Client(Client&&)                 = delete;
     Client& operator=(Client&&)      = delete;
 
-    TransportResult Connect();
-    void            Disconnect();
-    void            SendFrame(FrameRecord frame);
+    void Connect();
+    void Disconnect();
+    void SendFrame(FrameRecord frame);
+
+    bool IsSessionActive() const { return is_session_active_; }
+
+protected:
+    virtual TransportResult Send(PacketType type, const ByteBuffer& payload)                        override;
+    virtual TransportResult Receive(PacketHeader& out_header, ByteBuffer& out_payload)              override;
+    virtual void            OnPacketReceived(const PacketHeader& header, const ByteBuffer& payload) override;
+    virtual void            OnDisconnected()                                                        override;
 
 private:
     Client() = default;
     ~Client() { Disconnect(); }
 
+    void ConnectWorker();
     TransportResult SendHandshake();
 
-    void OnSessionStart();
-    void OnSessionStop();
+    void OnSessionStart() { is_session_active_ = true; }
+    void OnSessionStop()  { is_session_active_ = false; }
 
-    void SendWorker();
-    void RecvWorker();
-
-    PipeClient                transport_;
-    std::thread               send_thread_;
-    std::thread               recv_thread_;
-    std::queue<FrameRecord>   queue_;
-    std::mutex                mutex_;
-    std::condition_variable   cv_;
-    std::atomic<bool>         is_running_        = false;
-    std::atomic<bool>         is_session_active_ = false;
+    PipeClient        data_pipe_;
+    PipeClient        control_pipe_;
+    std::thread       connect_thread_;
+    std::atomic<bool> is_session_active_ = false;
 };
 
 } // namespace insight

@@ -15,6 +15,25 @@ void UniquePipeHandle::Reset(HandleType handle) {
     handle_ = handle;
 }
 
+TransportResult UniquePipeHandle::ReadExact(void* buffer, DWORD size) {
+    DWORD total = 0;
+    while (total < size) {
+        DWORD bytes_read = 0;
+        if (!ReadFile(handle_,
+                      static_cast<char*>(buffer) + total,
+                      size - total,
+                      &bytes_read, 
+                      nullptr)) {
+            return TransportResult::GetSystemError();
+        }
+        if (bytes_read == 0) {
+            return TransportResult::Err(std::error_code(ERROR_BROKEN_PIPE, std::system_category()));
+        }
+        total += bytes_read;
+    }
+    return TransportResult::Ok();
+}
+
 TransportResult UniquePipeHandle::Send(PacketType type, const ByteBuffer& payload) {
     PacketHeader header;
     header.type         = type;
@@ -34,26 +53,19 @@ TransportResult UniquePipeHandle::Send(PacketType type, const ByteBuffer& payloa
     return TransportResult::Ok();
 }
 
-TransportResult UniquePipeHandle::Receive(PacketType& out_type, ByteBuffer& out_data) {
-    PacketHeader header;
-
-    DWORD bytes_read = 0;
-    if (!ReadFile(handle_, &header, sizeof(PacketHeader), &bytes_read, nullptr)) {
-        return TransportResult::GetSystemError();
+TransportResult UniquePipeHandle::Receive(PacketHeader& out_header, ByteBuffer& out_payload) {
+    auto result = ReadExact(&out_header, sizeof(PacketHeader));
+    if (!result) {
+        return result;
     }
 
-    out_type = header.type;
-
-    if (header.payload_size == 0) {
-        out_data.clear();
+    out_payload.clear();
+    if (out_header.payload_size == 0) {
         return TransportResult::Ok();
     }
 
-    out_data.resize(header.payload_size);
-    if (!ReadFile(handle_, out_data.data(), static_cast<DWORD>(header.payload_size), &bytes_read, nullptr)) {
-        return TransportResult::GetSystemError();
-    }
-    return TransportResult::Ok();
+    out_payload.resize(out_header.payload_size);
+    return ReadExact(out_payload.data(), static_cast<DWORD>(out_header.payload_size));
 }
 
 TransportResult PipeClient::Send(PacketType type, const ByteBuffer& payload) {
@@ -69,12 +81,12 @@ TransportResult PipeClient::Send(PacketType type, const ByteBuffer& payload) {
     return result;
 }
 
-TransportResult PipeClient::Receive(PacketType& out_type, ByteBuffer& out_data) {
+TransportResult PipeClient::Receive(PacketHeader& out_header, ByteBuffer& out_payload) {
     if (!IsConnected()) {
         return TransportResult::NotConnected();
     }
 
-    auto result = handle_.Receive(out_type, out_data);
+    auto result = handle_.Receive(out_header, out_payload);
     if (!result && result.IsDisconnected()) {
         Disconnect();
     }
@@ -82,20 +94,14 @@ TransportResult PipeClient::Receive(PacketType& out_type, ByteBuffer& out_data) 
     return result;
 }
 
-TransportResult PipeClient::Connect() {
+TransportResult PipeClient::Connect(const wchar_t* pipe_name, DWORD access) {
     handle_.Reset(CreateFileW(
-        PIPE_NAME,
-        GENERIC_READ | GENERIC_WRITE,
+        pipe_name,
+        access,
         0, nullptr, OPEN_EXISTING, 0, nullptr
     ));
 
     if (!IsConnected()) {
-        return TransportResult::GetSystemError();
-    }
-
-    DWORD mode = PIPE_READMODE_BYTE;
-    if (!SetNamedPipeHandleState(handle_.Get(), &mode, nullptr, nullptr)) {
-        Disconnect();
         return TransportResult::GetSystemError();
     }
 
@@ -115,12 +121,12 @@ TransportResult PipeServer::Send(PacketType type, const ByteBuffer& payload) {
     return result;
 }
 
-TransportResult PipeServer::Receive(PacketType& out_type, ByteBuffer& out_data) {
+TransportResult PipeServer::Receive(PacketHeader& out_header, ByteBuffer& out_payload) {
     if (!IsConnected()) {
         return TransportResult::NotConnected();
     }
 
-    auto result = handle_.Receive(out_type, out_data);
+    auto result = handle_.Receive(out_header, out_payload);
     if (!result && result.IsDisconnected()) {
         Disconnect();
     }
@@ -128,10 +134,10 @@ TransportResult PipeServer::Receive(PacketType& out_type, ByteBuffer& out_data) 
     return result;
 }
 
-TransportResult PipeServer::Listen() {
+TransportResult PipeServer::Listen(const wchar_t* pipe_name, DWORD access) {
     handle_.Reset(CreateNamedPipeW(
-        PIPE_NAME,
-        PIPE_ACCESS_DUPLEX,
+        pipe_name,
+        access,
         PIPE_TYPE_BYTE | PIPE_READMODE_BYTE | PIPE_WAIT,
         1, 4096, 4096, 0, nullptr
     ));

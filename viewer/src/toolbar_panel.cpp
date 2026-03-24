@@ -20,20 +20,33 @@ void ToolbarPanel::Render() {
     }
     ImGui::SameLine();
 
-    if (!context.is_recording) {
-        if (ImGui::Button("Record")) {
-            server.StartSession();
-            context.is_recording   = true;
-            context.timeline_begin = 0;
-            context.timeline_end   = 0;
+    if (!context.is_connected) {
+        if (ImGui::Button("Connect")) {
+            server.Listen();
         }
     } else {
-        if (ImGui::Button("Stop")) {
-            server.StopSession();
-            context.is_recording = false;
-            context.timeline_end = insight::Reporter::GetInstance().Size();
+        if (ImGui::Button("Disconnect")) {
+            server.Stop();
+        }
+        ImGui::SameLine();
+
+        if (!context.is_recording) {
+            if (ImGui::Button("Record")) {
+                server.StartSession();
+                context.is_recording   = true;
+                context.needs_reset    = true;
+                context.timeline_begin = 0;
+                context.timeline_end   = 0;
+            }
+        } else {
+            if (ImGui::Button("Stop")) {
+                server.StopSession();
+                context.is_recording = false;
+                context.timeline_end = insight::Reporter::GetInstance().Size();
+            }
         }
     }
+
     ImGui::SameLine();
 
     ImGui::TextColored(

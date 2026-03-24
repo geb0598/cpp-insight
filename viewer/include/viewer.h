@@ -17,6 +17,9 @@ public:
     Viewer() = default;
     ~Viewer() { Shutdown(); }
 
+    Viewer(const Viewer&)            = delete;
+    Viewer& operator=(const Viewer&) = delete;
+
     bool Init(HWND hwnd);
     void Shutdown();
     void Run();
@@ -26,10 +29,7 @@ public:
 private:
     bool InitDX11(HWND hwnd);
     bool InitServer();
-
     void Resize(UINT width, UINT height);
-
-    void CheckConnection();
 
     void BeginFrame();
     void EndFrame();

@@ -11,6 +11,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 add_library(cpp-insight-core 
     STATIC 
         src/client.cpp
+        src/connection.cpp
         src/pipe_transport.cpp
         src/reporter.cpp 
         src/server.cpp
@@ -73,11 +74,11 @@ if(INSIGHT_BUILD_TESTS)
     set(CMAKE_CTEST_ARGUMENTS "--no-compress-output")
 
     set(TEST_SOURCES
-        tests/src/test_archive.cpp
-        tests/src/test_pipe_transport.cpp
-        tests/src/test_registry.cpp
-        tests/src/test_reporter.cpp
-        tests/src/test_scope_profiler.cpp
+        tests/unit/test_archive.cpp
+        tests/unit/test_pipe_transport.cpp
+        tests/unit/test_registry.cpp
+        tests/unit/test_reporter.cpp
+        tests/unit/test_scope_profiler.cpp
     )
 
     add_executable(insight-test ${TEST_SOURCES})
@@ -90,4 +91,6 @@ if(INSIGHT_BUILD_TESTS)
 
     include(GoogleTest)
     gtest_discover_tests(insight-test)
+
+    add_subdirectory(tests/integration/game_stub)
 endif()

@@ -25,7 +25,7 @@ TEST_F(ReporterTest, SubmitIncreasesSize) {
     {
         INSIGHT_SCOPE_CYCLE_COUNTER(STAT_OUTER);
     }
-    insight::Reporter::GetInstance().Submit(INSIGHT_FRAME_END());
+    insight::Reporter::GetInstance().Submit(insight::ScopeProfiler::GetInstance().EndFrame());
 
     EXPECT_EQ(insight::Reporter::GetInstance().Size(), 1u);
 }
@@ -42,7 +42,7 @@ TEST_F(ReporterTest, SummarizeByGroupReturnsCorrectGroups) {
         {
             INSIGHT_SCOPE_CYCLE_COUNTER(STAT_DRAW);
         }
-        insight::Reporter::GetInstance().Submit(INSIGHT_FRAME_END());
+        insight::Reporter::GetInstance().Submit(insight::ScopeProfiler::GetInstance().EndFrame());
     }
 
     auto groups = insight::Reporter::GetInstance().SummarizeByGroup(5);
@@ -66,7 +66,7 @@ TEST_F(ReporterTest, SummarizeByGroupTimingIsPositive) {
         {
             INSIGHT_SCOPE_CYCLE_COUNTER(STAT_OUTER);
         }
-        insight::Reporter::GetInstance().Submit(INSIGHT_FRAME_END());
+        insight::Reporter::GetInstance().Submit(insight::ScopeProfiler::GetInstance().EndFrame());
     }
 
     auto groups = insight::Reporter::GetInstance().SummarizeByGroup(5);
@@ -91,7 +91,7 @@ TEST_F(ReporterTest, SummarizeByStackInclusiveGeExclusive) {
                 INSIGHT_SCOPE_CYCLE_COUNTER(STAT_INNER);
             }
         }
-        insight::Reporter::GetInstance().Submit(INSIGHT_FRAME_END());
+        insight::Reporter::GetInstance().Submit(insight::ScopeProfiler::GetInstance().EndFrame());
     }
 
     auto stacks = insight::Reporter::GetInstance().SummarizeByStack(0, 5);
@@ -116,7 +116,7 @@ TEST_F(ReporterTest, SummarizeByStackDepth) {
                 INSIGHT_SCOPE_CYCLE_COUNTER(STAT_INNER);
             }
         }
-        insight::Reporter::GetInstance().Submit(INSIGHT_FRAME_END());
+        insight::Reporter::GetInstance().Submit(insight::ScopeProfiler::GetInstance().EndFrame());
     }
 
     auto stacks = insight::Reporter::GetInstance().SummarizeByStack(0, 5);

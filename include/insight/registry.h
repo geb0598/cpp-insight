@@ -25,7 +25,7 @@ public:
     Descriptor(std::string name, Group& group);
 
     static Descriptor& GetFrameDescriptor() {
-        static Descriptor instance(FRAME_ID, "");
+        static Descriptor instance(FRAME_ID, "Frame");
         return instance;
     }
     static Id PeekId() { return next_id; }
@@ -66,7 +66,7 @@ public:
     explicit Group(std::string name);
 
     static Group& GetFrameGroup() {
-        static Group instance(FRAME_ID, "");
+        static Group instance(FRAME_ID, "Frame");
         return instance;
     }
     static Id PeekId() { return next_id; }

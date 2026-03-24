@@ -2,9 +2,9 @@
 
 // Core
 #include "insight/archive.h"
+#include "insight/client.h"
 #include "insight/platform_time.h"
 #include "insight/scope_profiler.h"
-// #include "insight/stat_aggregator.h"
 #include "insight/registry.h"
 
 // GPU (Windows only)
@@ -32,7 +32,7 @@
     insight::ScopeProfiler::GetInstance().BeginFrame()
 
 #define INSIGHT_FRAME_END() \
-    insight::ScopeProfiler::GetInstance().EndFrame()
+    insight::Client::GetInstance().SendFrame(insight::ScopeProfiler::GetInstance().EndFrame())
 
 // -------------------------------------------------
 // Client macros
@@ -42,12 +42,3 @@
 
 #define INSIGHT_SHUTDOWN() \
     insight::Client::GetInstance().Disconnect()
-
-// -------------------------------------------------
-// Session macros
-// -------------------------------------------------
-#define INSIGHT_SESSION_START() \
-    insight::StatAggregator::GetInstance().StartSession()
-
-#define INSIGHT_SESSION_STOP() \
-    insight::StatAggregator::GetInstance().StopSession()

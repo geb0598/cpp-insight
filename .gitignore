@@ -83,3 +83,6 @@ Thumbs.db
 ehthumbs.db
 Desktop.ini
 $RECYCLE.BIN/
+
+# ImGui
+imgui.ini

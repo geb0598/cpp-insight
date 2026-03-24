@@ -1,5 +1,8 @@
 include(FetchContent)
 
+# -----------------------------------------------
+# ImGui
+# -----------------------------------------------
 FetchContent_Declare(
     imgui
     GIT_REPOSITORY https://github.com/ocornut/imgui.git
@@ -23,6 +26,29 @@ target_include_directories(imgui PUBLIC
 
 target_link_libraries(imgui PUBLIC d3d11 dxgi)
 
+# -----------------------------------------------
+# ImPlot
+# -----------------------------------------------
+FetchContent_Declare(
+    implot
+    GIT_REPOSITORY https://github.com/epezent/implot.git
+    GIT_TAG        v0.16 
+)
+FetchContent_MakeAvailable(implot)
+
+add_library(implot STATIC
+    ${implot_SOURCE_DIR}/implot.cpp
+    ${implot_SOURCE_DIR}/implot_items.cpp
+    ${implot_SOURCE_DIR}/implot_demo.cpp
+)
+
+target_include_directories(implot PUBLIC ${implot_SOURCE_DIR})
+
+target_link_libraries(implot PUBLIC imgui)
+
+# -----------------------------------------------
+# cpp-insight-viewer
+# -----------------------------------------------
 add_executable(cpp-insight-viewer WIN32
     src/main.cpp
     src/viewer.cpp
@@ -40,5 +66,6 @@ target_include_directories(cpp-insight-viewer
 target_link_libraries(cpp-insight-viewer
     PRIVATE
         cpp-insight-core
+        implot
         imgui
 )

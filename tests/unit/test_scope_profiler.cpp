@@ -24,7 +24,7 @@ TEST_F(ScopeProfilerTest, FrameRecordCount) {
             INSIGHT_SCOPE_CYCLE_COUNTER(STAT_INNER);
         }
     }
-    auto frame = INSIGHT_FRAME_END();
+    auto frame = insight::ScopeProfiler::GetInstance().EndFrame();
 
     EXPECT_EQ(frame.size(), 3u);
 }
@@ -37,7 +37,7 @@ TEST_F(ScopeProfilerTest, DepthTracking) {
             INSIGHT_SCOPE_CYCLE_COUNTER(STAT_INNER);
         }
     }
-    auto frame = INSIGHT_FRAME_END();
+    auto frame = insight::ScopeProfiler::GetInstance().EndFrame();
 
     EXPECT_EQ(frame.size(),   3u);
     EXPECT_EQ(frame[0].depth, 2); 
@@ -51,7 +51,7 @@ TEST_F(ScopeProfilerTest, DurationIsPositive) {
     {
         INSIGHT_SCOPE_CYCLE_COUNTER(STAT_OUTER);
     }
-    auto frame = INSIGHT_FRAME_END();
+    auto frame = insight::ScopeProfiler::GetInstance().EndFrame();
 
     EXPECT_GT(frame[0].duration.count(), 0);
 }
@@ -64,7 +64,7 @@ TEST_F(ScopeProfilerTest, FrameClearedOnBeginFrame) {
     INSIGHT_FRAME_END();
 
     INSIGHT_FRAME_BEGIN();
-    auto frame = INSIGHT_FRAME_END();
+    auto frame = insight::ScopeProfiler::GetInstance().EndFrame();
     EXPECT_EQ(frame.size(), 1u);
     EXPECT_EQ(frame[0].id, insight::Descriptor::FRAME_ID);
 }

@@ -6,13 +6,14 @@
 #include <memory>
 #include <thread>
 
+#include "insight/connection.h"
 #include "insight/pipe_transport.h"
 #include "insight/scope_profiler.h"
 #include "insight/registry.h"
 
 namespace insight {
 
-class Server {
+class Server : public Connection {
 public:
     static Server& GetInstance() {
         static Server instance;
@@ -24,25 +25,25 @@ public:
     Server(Server&&)                 = delete;
     Server& operator=(Server&&)      = delete;
 
-    TransportResult              Listen();
-    std::future<TransportResult> Accept();
-    void                         Disconnect();
+    void Listen();
+    void Stop();
 
     void StartSession();
     void StopSession();
+
     bool IsSessionActive() const { return is_session_active_; }
 
-    size_t GetFrameCount()   const { return frames_.size(); }
-
-    const std::deque<FrameRecord>& GetFrames() const { return frames_; }
-
-    void Clear() { frames_.clear(); }
+protected:
+    virtual TransportResult Send(PacketType type, const ByteBuffer& payload)                        override;
+    virtual TransportResult Receive(PacketHeader& out_header, ByteBuffer& out_payload)              override;
+    virtual void            OnPacketReceived(const PacketHeader& header, const ByteBuffer& payload) override;
+    virtual void            OnDisconnected()                                                        override;
 
 private:
     Server() = default;
-    ~Server() { Disconnect(); }
+    ~Server() { Stop(); }
 
-    void RecvWorker();
+    void AcceptWorker();
 
     void OnHandshake(const ByteBuffer& data);
     void OnFrame(const ByteBuffer& data);
@@ -50,11 +51,10 @@ private:
     std::vector<std::unique_ptr<Group>>      owned_groups_;
     std::vector<std::unique_ptr<Descriptor>> owned_descs_;
 
-    PipeServer              transport_;
-    std::thread             recv_thread_;
-    std::atomic<bool>       is_running_        = false;
-    std::atomic<bool>       is_session_active_ = false;
-    std::deque<FrameRecord> frames_;
+    PipeServer        data_pipe_;
+    PipeServer        control_pipe_;
+    std::thread       accept_thread_;
+    std::atomic<bool> is_session_active_ = false;
 };
 
 } // namespace insight

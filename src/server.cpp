@@ -1,68 +1,110 @@
-#include "insight/server.h"
 #include "insight/archive.h"
+#include "insight/reporter.h"
+#include "insight/server.h"
 
 namespace insight {
 
-TransportResult Server::Listen() {
-    return transport_.Listen();
-}
-
-std::future<TransportResult> Server::Accept() {
-    return std::async(std::launch::async, [this]() {
-        return transport_.Accept();
-    });
-}
-
-void Server::Disconnect() {
-    if (is_session_active_) {
-        StopSession();
+void Server::Listen() {
+    auto data_result = data_pipe_.Listen(DATA_PIPE_NAME, PIPE_ACCESS_INBOUND);
+    if (!data_result) {
+        return;
     }
-    is_running_ = false;
-    transport_.Disconnect();
+
+    auto control_result = control_pipe_.Listen(CONTROL_PIPE_NAME, PIPE_ACCESS_OUTBOUND);
+    if (!control_result) {
+        data_pipe_.Disconnect();
+        return;
+    }
+
+    if (accept_thread_.joinable()) {
+        accept_thread_.join();
+    }
+    accept_thread_ = std::thread(&Server::AcceptWorker, this);
+}
+
+void Server::Stop() {
+    is_session_active_ = false;
+    data_pipe_.Disconnect();
+    control_pipe_.Disconnect();
+    StopWorkers();
+    NotifyDisconnected();
+
+    if (accept_thread_.joinable()) {
+        accept_thread_.join();
+    }
 }
 
 void Server::StartSession() {
-    frames_.clear();
-    is_running_        = true;
+    if (!IsConnected()) {
+        return;
+    }
+    Reporter::GetInstance().Clear();
     is_session_active_ = true;
-    recv_thread_       = std::thread(&Server::RecvWorker, this);
-    transport_.Send(PacketType::SESSION_START, {});
+    EnqueuePacket(PacketType::SESSION_START, {});
 }
 
 void Server::StopSession() {
+    if (!IsConnected()) {
+        return;
+    }
     is_session_active_ = false;
-    is_running_        = false;
-    transport_.Send(PacketType::SESSION_STOP, {});
+    EnqueuePacket(PacketType::SESSION_STOP, {});
+}
 
-    if (recv_thread_.joinable()) {
-        recv_thread_.join();
+TransportResult Server::Send(PacketType type, const ByteBuffer& payload) {
+    return control_pipe_.Send(type, payload);
+}
+
+TransportResult Server::Receive(PacketHeader& out_header, ByteBuffer& out_payload) {
+    return data_pipe_.Receive(out_header, out_payload);
+}
+
+void Server::OnPacketReceived(const PacketHeader& header, const ByteBuffer& payload) {
+    switch (header.type) {
+    case PacketType::HANDSHAKE:
+        OnHandshake(payload);
+        break;
+    case PacketType::FRAME:
+        OnFrame(payload);
+        break;
+    default:
+        break;
     }
 }
 
-void Server::RecvWorker() {
-    while (is_running_) {
-        PacketType type;
-        ByteBuffer data;
+void Server::OnDisconnected() {
+    is_session_active_ = false;
+    data_pipe_.Disconnect();
+    control_pipe_.Disconnect();
+    NotifyDisconnected();
+}
 
-        auto result = transport_.Receive(type, data);
+void Server::AcceptWorker() {
+    std::thread data_accept_thread([this]() {
+        auto result = data_pipe_.Accept();
         if (!result) {
-            if (result.IsDisconnected()) {
-                is_running_ = false;
-            }
-            return;
+            data_pipe_.Disconnect();
         }
+    });
 
-        switch (type) {
-        case PacketType::HANDSHAKE:
-            OnHandshake(data);
-            break;
-        case PacketType::FRAME:
-            OnFrame(data);
-            break;
-        default:
-            break;
+    std::thread control_accept_thread([this]() {
+        auto result = control_pipe_.Accept();
+        if (!result) {
+            control_pipe_.Disconnect();
         }
+    });
+
+    data_accept_thread.join();
+    control_accept_thread.join();
+
+    if (!data_pipe_.IsConnected() || !control_pipe_.IsConnected()) {
+        data_pipe_.Disconnect();
+        control_pipe_.Disconnect();
+        return;
     }
+
+    NotifyConnected();
+    StartWorkers();
 }
 
 void Server::OnHandshake(const ByteBuffer& data) {
@@ -100,7 +142,7 @@ void Server::OnFrame(const ByteBuffer& data) {
     FrameRecord  frame;
     reader << frame;
 
-    frames_.push_back(std::move(frame));
+    Reporter::GetInstance().Submit(std::move(frame));
 }
 
 } // namespace insight

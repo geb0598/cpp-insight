@@ -1,5 +1,6 @@
 #pragma once
 
+#include <mutex>
 #include <vector>
 
 #include "insight/profile_types.h"
@@ -30,6 +31,7 @@ public:
 
     std::vector<GroupSummary> SummarizeByGroup(size_t count) const;
     std::vector<StackSummary> SummarizeByStack(size_t begin, size_t end) const;
+    TimelineSummary           GetTimelineSummary() const;
 
 private:
     Reporter()  = default;
@@ -38,6 +40,7 @@ private:
     TimingSummary ComputeTiming(std::vector<double> ms_values) const;
 
     std::vector<FrameRecord> frames_;
+    mutable std::mutex       mutex_;
 };
 
 } // namespace insight

@@ -5,7 +5,8 @@
 namespace insight {
 
 #if defined(_WIN32)
-constexpr wchar_t PIPE_NAME[] = L"\\\\.\\pipe\\cpp-insight";
+constexpr wchar_t DATA_PIPE_NAME[]    = L"\\\\.\\pipe\\cpp-insight-data";
+constexpr wchar_t CONTROL_PIPE_NAME[] = L"\\\\.\\pipe\\cpp-insight-control";
 #endif
 
 // -------------------------------------------------
@@ -56,9 +57,11 @@ public:
     void Reset(HandleType handle = INVALID_HANDLE);
 
     TransportResult Send(PacketType type, const ByteBuffer& payload);
-    TransportResult Receive(PacketType& out_type, ByteBuffer& out_data);
+    TransportResult Receive(PacketHeader& out_header, ByteBuffer& out_payload);
 
 private:
+    TransportResult ReadExact(void* buffer, DWORD size); 
+
     HandleType handle_ = INVALID_HANDLE;
 };
 
@@ -71,12 +74,12 @@ public:
     PipeClient()           = default;
     ~PipeClient() override = default;
 
-    TransportResult Connect()           override;
-    void            Disconnect()        override { handle_.Reset(); }
-    bool            IsConnected() const override { return handle_.IsValid(); }
+    TransportResult Connect(const wchar_t* pipe_name, DWORD access)       override;
+    void            Disconnect()                                          override { handle_.Reset(); }
+    bool            IsConnected()                                   const override { return handle_.IsValid(); }
 
     TransportResult Send(PacketType type, const ByteBuffer& payload)    override;
-    TransportResult Receive(PacketType& out_type, ByteBuffer& out_data) override;
+    TransportResult Receive(PacketHeader& out_type, ByteBuffer& out_payload) override;
 
 private:
     UniquePipeHandle handle_;
@@ -90,13 +93,13 @@ public:
     PipeServer()           = default;
     ~PipeServer() override { CleanUp(); }
 
-    TransportResult Listen()            override;
-    TransportResult Accept()            override;
-    void            Disconnect()        override { CleanUp(); }
-    bool            IsConnected() const override { return handle_.IsValid(); }
+    TransportResult Listen(const wchar_t* pipe_name, DWORD access)       override;
+    TransportResult Accept()                                             override;
+    void            Disconnect()                                         override { CleanUp(); }
+    bool            IsConnected()                                  const override { return handle_.IsValid(); }
 
     TransportResult Send(PacketType type, const ByteBuffer& payload)    override;
-    TransportResult Receive(PacketType& out_type, ByteBuffer& out_data) override;
+    TransportResult Receive(PacketHeader& out_header, ByteBuffer& out_payload) override;
 
 private:
     void CleanUp();
