@@ -1,9 +1,7 @@
 #pragma once
 
 // Core
-#include "insight/archive.h"
 #include "insight/client.h"
-#include "insight/platform_time.h"
 #include "insight/scope_profiler.h"
 #include "insight/registry.h"
 
@@ -26,7 +24,7 @@
 // Profiling macros
 // -------------------------------------------------
 #define INSIGHT_SCOPE_CYCLE_COUNTER(stat) \
-    insight::ScopeTimer _scope_timer_##__LINE__(stat)
+    insight::ScopeTimer _scope_timer_##__COUNTER__(stat)
 
 #define INSIGHT_FRAME_BEGIN() \
     insight::ScopeProfiler::GetInstance().BeginFrame()
