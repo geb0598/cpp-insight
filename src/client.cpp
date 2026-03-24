@@ -7,11 +7,12 @@ void Client::Connect() {
     if (connect_thread_.joinable()) {
         connect_thread_.join();
     }
-    connect_thread_ = std::thread(&Client::ConnectWorker, this);
+    is_client_running_ = true;
+    connect_thread_    = std::thread(&Client::ConnectWorker, this);
 }
 
 void Client::Disconnect() {
-    is_session_active_ = false;
+    is_client_running_ = false;
     data_pipe_.Disconnect();
     control_pipe_.Disconnect();
     StopWorkers();
@@ -23,7 +24,7 @@ void Client::Disconnect() {
 }
 
 void Client::SendFrame(FrameRecord frame) {
-    if (!IsRunning() || !is_session_active_) {
+    if (!IsRecording()) {
         return;
     }
 
@@ -42,11 +43,11 @@ TransportResult Client::Receive(PacketHeader& out_header, ByteBuffer& out_payloa
 
 void Client::OnPacketReceived(const PacketHeader& header, const ByteBuffer& payload) {
     switch (header.type) {
-    case PacketType::SESSION_START:
-        OnSessionStart();
+    case PacketType::RECORDING_START:
+        SetState(ClientState::RECORDING);
         break;
-    case PacketType::SESSION_STOP:
-        OnSessionStop();
+    case PacketType::RECORDING_STOP:
+        SetState(ClientState::CONNECTED);
         break;
     default:
         break;
@@ -54,14 +55,21 @@ void Client::OnPacketReceived(const PacketHeader& header, const ByteBuffer& payl
 }
 
 void Client::OnDisconnected() {
-    is_session_active_ = false;
+    SetState(ClientState::DISCONNECTED);
     data_pipe_.Disconnect();
     control_pipe_.Disconnect();
     NotifyDisconnected();
 }
 
 void Client::ConnectWorker() {
-    while (!IsRunning()) {
+    while (IsClientRunning()) {
+        if (!IsDisconnected()) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+            continue;
+        }
+
+        StopWorkers();
+
         auto data_result = data_pipe_.Connect(DATA_PIPE_NAME, GENERIC_WRITE);
         if (!data_result) {
             std::this_thread::sleep_for(std::chrono::milliseconds(500));
@@ -83,9 +91,9 @@ void Client::ConnectWorker() {
             continue;
         }
 
+        SetState(ClientState::CONNECTED);
         NotifyConnected();
         StartWorkers();
-        return;
     }
 }
 

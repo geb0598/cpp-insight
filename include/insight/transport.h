@@ -62,8 +62,8 @@ enum class PacketType : uint8_t {
     NONE          = 0,
     HANDSHAKE     = 1,
     FRAME         = 2,
-    SESSION_START = 3,
-    SESSION_STOP  = 4,
+    RECORDING_START = 3,
+    RECORDING_STOP  = 4,
 };
 
 // -------------------------------------------------

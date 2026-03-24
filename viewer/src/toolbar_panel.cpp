@@ -14,46 +14,66 @@ void ToolbarPanel::Render() {
         // @todo
     }
     ImGui::SameLine();
-
     if (ImGui::Button("Load")) {
         // @todo
     }
     ImGui::SameLine();
-
-    if (!context.is_connected) {
-        if (ImGui::Button("Connect")) {
-            server.Listen();
-        }
-    } else {
-        if (ImGui::Button("Disconnect")) {
-            server.Stop();
-        }
-        ImGui::SameLine();
-
-        if (!context.is_recording) {
-            if (ImGui::Button("Record")) {
-                server.StartSession();
-                context.is_recording   = true;
-                context.needs_reset    = true;
-                context.timeline_begin = 0;
-                context.timeline_end   = 0;
-            }
-        } else {
-            if (ImGui::Button("Stop")) {
-                server.StopSession();
-                context.is_recording = false;
-                context.timeline_end = insight::Reporter::GetInstance().Size();
-            }
-        }
-    }
-
+    
+    ImGui::TextDisabled("|"); 
     ImGui::SameLine();
 
-    ImGui::TextColored(
-        context.is_connected
-            ? ImVec4(0.0f, 1.0f, 0.0f, 1.0f)
-            : ImVec4(1.0f, 0.0f, 0.0f, 1.0f),
-        context.is_connected ? "Connected" : "Disconnected");
+    switch (context.server_state) {
+        
+        case ServerState::OFFLINE:
+            if (ImGui::Button("Listen")) {
+                server.Listen();
+                context.server_state = ServerState::LISTENING; 
+            }
+            ImGui::SameLine();
+            ImGui::TextColored(ImVec4(0.5f, 0.5f, 0.5f, 1.0f), "Offline (Local Mode)");
+            break;
+
+        case ServerState::LISTENING:
+            if (ImGui::Button("Stop Listening")) {
+                server.Stop();
+                context.server_state = ServerState::OFFLINE;
+            }
+            ImGui::SameLine();
+            ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.0f, 1.0f), "Listening for Client...");
+            break;
+
+        case ServerState::CONNECTED:
+            if (ImGui::Button("Disconnect")) {
+                server.Stop();
+                context.server_state = ServerState::OFFLINE;
+            }
+            ImGui::SameLine();
+            if (ImGui::Button("Record")) {
+                server.StartRecording();
+                context.server_state = ServerState::RECORDING;
+                context.needs_reset = true;
+                context.timeline_begin = 0;
+                context.timeline_end = 0;
+            }
+            ImGui::SameLine();
+            ImGui::TextColored(ImVec4(0.0f, 1.0f, 0.0f, 1.0f), "Connected (Idle)");
+            break;
+
+        case ServerState::RECORDING:
+            if (ImGui::Button("Disconnect")) {
+                server.Stop();
+                context.server_state = ServerState::OFFLINE;
+            }
+            ImGui::SameLine();
+            if (ImGui::Button("Stop Recording")) {
+                server.StopRecording();
+                context.server_state = ServerState::CONNECTED;
+                context.timeline_end = insight::Reporter::GetInstance().Size();
+            }
+            ImGui::SameLine();
+            ImGui::TextColored(ImVec4(1.0f, 0.2f, 0.2f, 1.0f), "Recording...");
+            break;
+    }
 
     ImGui::Separator();
 }

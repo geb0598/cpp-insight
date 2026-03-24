@@ -33,10 +33,6 @@ int main() {
         }
         INSIGHT_FRAME_END();
 
-        std::cout << "is_sending: "
-            << insight::Client::GetInstance().IsSessionActive()
-            << "\n";
-
         std::this_thread::sleep_for(std::chrono::milliseconds(8));
     }
 

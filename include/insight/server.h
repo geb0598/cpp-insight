@@ -13,6 +13,19 @@
 
 namespace insight {
 
+// -------------------------------------------------
+// ServerState
+// -------------------------------------------------
+enum class ServerState {
+    OFFLINE  , 
+    LISTENING,
+    CONNECTED,
+    RECORDING,
+};
+
+// -------------------------------------------------
+// Server
+// -------------------------------------------------
 class Server : public Connection {
 public:
     static Server& GetInstance() {
@@ -28,16 +41,21 @@ public:
     void Listen();
     void Stop();
 
-    void StartSession();
-    void StopSession();
+    void StartRecording();
+    void StopRecording();
 
-    bool IsSessionActive() const { return is_session_active_; }
+    ServerState GetState()    const { return state_.load(); }
+    bool        IsListening() const { return state_ == ServerState::LISTENING; }
+    bool        IsConnected() const { return state_ == ServerState::CONNECTED; }
+    bool        IsRecording() const { return state_ == ServerState::RECORDING; }
 
 protected:
     virtual TransportResult Send(PacketType type, const ByteBuffer& payload)                        override;
     virtual TransportResult Receive(PacketHeader& out_header, ByteBuffer& out_payload)              override;
     virtual void            OnPacketReceived(const PacketHeader& header, const ByteBuffer& payload) override;
     virtual void            OnDisconnected()                                                        override;
+
+    void SetState(ServerState state) { state_.store(state); }
 
 private:
     Server() = default;
@@ -51,10 +69,10 @@ private:
     std::vector<std::unique_ptr<Group>>      owned_groups_;
     std::vector<std::unique_ptr<Descriptor>> owned_descs_;
 
-    PipeServer        data_pipe_;
-    PipeServer        control_pipe_;
-    std::thread       accept_thread_;
-    std::atomic<bool> is_session_active_ = false;
+    PipeServer               data_pipe_;
+    PipeServer               control_pipe_;
+    std::thread              accept_thread_;
+    std::atomic<ServerState> state_ = ServerState::OFFLINE;
 };
 
 } // namespace insight

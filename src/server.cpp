@@ -5,6 +5,8 @@
 namespace insight {
 
 void Server::Listen() {
+    StopWorkers();
+
     auto data_result = data_pipe_.Listen(DATA_PIPE_NAME, PIPE_ACCESS_INBOUND);
     if (!data_result) {
         return;
@@ -16,6 +18,8 @@ void Server::Listen() {
         return;
     }
 
+    SetState(ServerState::LISTENING);
+
     if (accept_thread_.joinable()) {
         accept_thread_.join();
     }
@@ -23,7 +27,7 @@ void Server::Listen() {
 }
 
 void Server::Stop() {
-    is_session_active_ = false;
+    SetState(ServerState::OFFLINE);
     data_pipe_.Disconnect();
     control_pipe_.Disconnect();
     StopWorkers();
@@ -34,21 +38,21 @@ void Server::Stop() {
     }
 }
 
-void Server::StartSession() {
+void Server::StartRecording() {
     if (!IsConnected()) {
         return;
     }
     Reporter::GetInstance().Clear();
-    is_session_active_ = true;
-    EnqueuePacket(PacketType::SESSION_START, {});
+    state_ = ServerState::RECORDING;
+    EnqueuePacket(PacketType::RECORDING_START, {});
 }
 
-void Server::StopSession() {
-    if (!IsConnected()) {
+void Server::StopRecording() {
+    if (!IsRecording()) {
         return;
     }
-    is_session_active_ = false;
-    EnqueuePacket(PacketType::SESSION_STOP, {});
+    SetState(ServerState::CONNECTED);
+    EnqueuePacket(PacketType::RECORDING_STOP, {});
 }
 
 TransportResult Server::Send(PacketType type, const ByteBuffer& payload) {
@@ -73,7 +77,7 @@ void Server::OnPacketReceived(const PacketHeader& header, const ByteBuffer& payl
 }
 
 void Server::OnDisconnected() {
-    is_session_active_ = false;
+    SetState(ServerState::OFFLINE);
     data_pipe_.Disconnect();
     control_pipe_.Disconnect();
     NotifyDisconnected();
@@ -98,11 +102,13 @@ void Server::AcceptWorker() {
     control_accept_thread.join();
 
     if (!data_pipe_.IsConnected() || !control_pipe_.IsConnected()) {
+        state_ = ServerState::OFFLINE;
         data_pipe_.Disconnect();
         control_pipe_.Disconnect();
         return;
     }
 
+    state_ = ServerState::CONNECTED;
     NotifyConnected();
     StartWorkers();
 }
@@ -134,7 +140,7 @@ void Server::OnHandshake(const ByteBuffer& data) {
 }
 
 void Server::OnFrame(const ByteBuffer& data) {
-    if (!is_session_active_) {
+    if (!IsRecording()) {
         return;
     }
 

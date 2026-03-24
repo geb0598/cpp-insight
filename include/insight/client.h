@@ -14,6 +14,18 @@
 
 namespace insight {
 
+// -------------------------------------------------
+// ClientState
+// -------------------------------------------------
+enum class ClientState {
+    DISCONNECTED,
+    CONNECTED   ,
+    RECORDING   ,
+};
+
+// -------------------------------------------------
+// Client
+// -------------------------------------------------
 class Client : public Connection {
 public:
     static Client& GetInstance() {
@@ -30,13 +42,19 @@ public:
     void Disconnect();
     void SendFrame(FrameRecord frame);
 
-    bool IsSessionActive() const { return is_session_active_; }
+    ClientState GetState()        const { return state_.load(); }
+    bool        IsDisconnected()  const { return GetState() == ClientState::DISCONNECTED; }
+    bool        IsConnected()     const { return GetState() == ClientState::CONNECTED; }
+    bool        IsRecording()     const { return GetState() == ClientState::RECORDING; }
+    bool        IsClientRunning() const { return is_client_running_; }
 
 protected:
     virtual TransportResult Send(PacketType type, const ByteBuffer& payload)                        override;
     virtual TransportResult Receive(PacketHeader& out_header, ByteBuffer& out_payload)              override;
     virtual void            OnPacketReceived(const PacketHeader& header, const ByteBuffer& payload) override;
     virtual void            OnDisconnected()                                                        override;
+
+    void SetState(ClientState state) { state_.store(state); }
 
 private:
     Client() = default;
@@ -45,13 +63,11 @@ private:
     void ConnectWorker();
     TransportResult SendHandshake();
 
-    void OnSessionStart() { is_session_active_ = true; }
-    void OnSessionStop()  { is_session_active_ = false; }
-
-    PipeClient        data_pipe_;
-    PipeClient        control_pipe_;
-    std::thread       connect_thread_;
-    std::atomic<bool> is_session_active_ = false;
+    PipeClient               data_pipe_;
+    PipeClient               control_pipe_;
+    std::thread              connect_thread_;
+    std::atomic<bool>        is_client_running_ = false;
+    std::atomic<ClientState> state_ = ClientState::DISCONNECTED;
 };
 
 } // namespace insight

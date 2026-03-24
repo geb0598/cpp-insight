@@ -20,7 +20,6 @@ public:
     Connection& operator=(Connection&&)      = delete;
 
     bool IsRunning()   const { return is_running_; }
-    bool IsConnected() const { return is_connected_; }
 
     void SetOnConnected(std::function<void()> callback) { 
         on_connected_ = std::move(callback);
@@ -37,14 +36,12 @@ protected:
     void EnqueuePacket(PacketType type, ByteBuffer payload);
 
     void NotifyConnected() {
-        is_connected_ = true;
         if (on_connected_) {
             on_connected_();
         }
     }
 
     void NotifyDisconnected() {
-        is_connected_ = false;
         if (on_disconnected_) {
             on_disconnected_();
         }
@@ -71,7 +68,6 @@ private:
     std::condition_variable send_cv_;
 
     std::atomic<bool> is_running_  = false;
-    std::atomic<bool> is_connected_= false;
 
     std::function<void()> on_connected_;
     std::function<void()> on_disconnected_;

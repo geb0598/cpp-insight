@@ -18,6 +18,12 @@ void Connection::StopWorkers() {
     if (recv_thread_.joinable()) { 
         recv_thread_.join(); 
     }
+
+    {
+        std::lock_guard<std::mutex> lock(send_mutex_);
+        std::queue<Packet> empty;
+        std::swap(send_queue_, empty);
+    }
 }
 
 void Connection::EnqueuePacket(PacketType type, ByteBuffer payload) {
@@ -44,8 +50,11 @@ void Connection::SendWorker() {
         lock.unlock();
 
         auto result = Send(packet.type, packet.payload);
-        if (!result && result.IsDisconnected()) {
-            OnDisconnected();
+        if (!result) {
+            bool expected = true;
+            if (is_running_.compare_exchange_strong(expected, false)) {
+                OnDisconnected();
+            }
             return;
         }
     }
@@ -58,7 +67,8 @@ void Connection::RecvWorker() {
 
         auto result = Receive(header, payload);
         if (!result) {
-            if (result.IsDisconnected()) {
+            bool expected = true;
+            if (is_running_.compare_exchange_strong(expected, false)) {
                 OnDisconnected();
             }
             return;

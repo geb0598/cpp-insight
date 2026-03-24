@@ -1,13 +1,15 @@
 #pragma once
 
+#include "insight/server.h"
+
 namespace insight::viewer {
 
 // -------------------------------------------------
 // PanelContext 
 // -------------------------------------------------
 struct PanelContext {
-    bool is_connected     = false;
-    bool is_recording     = false;
+    ServerState server_state = ServerState::OFFLINE;
+
     bool needs_reset      = false;
     size_t timeline_begin = 0;
     size_t timeline_end   = 0;

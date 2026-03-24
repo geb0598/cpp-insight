@@ -121,11 +121,10 @@ bool Viewer::InitDX11(HWND hwnd) {
 bool Viewer::InitServer() {
     auto& server = insight::Server::GetInstance();
     server.SetOnConnected([this]() {
-        ctx_.is_connected = true;
+        ctx_.server_state = ServerState::CONNECTED;
     });
     server.SetOnDisconnected([this](){
-        ctx_.is_connected = false;
-        ctx_.is_recording = false;
+        ctx_.server_state = ServerState::OFFLINE;
     });
     return true;
 }
