@@ -53,7 +53,7 @@ TEST_F(ScopeProfilerTest, DurationIsPositive) {
     }
     auto frame = insight::ScopeProfiler::GetInstance().EndFrame();
 
-    EXPECT_GT(frame[0].duration.count(), 0);
+    EXPECT_GT(frame[0].end_ns - frame[0].start_ns, 0);
 }
 
 TEST_F(ScopeProfilerTest, FrameClearedOnBeginFrame) {

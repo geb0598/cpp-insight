@@ -32,6 +32,7 @@ public:
     std::vector<GroupSummary> SummarizeByGroup(size_t count) const;
     std::vector<StackSummary> SummarizeByStack(size_t begin, size_t end) const;
     TimelineSummary           GetTimelineSummary() const;
+    FlameSummary              GetFlameSummary() const;
 
 private:
     Reporter()  = default;

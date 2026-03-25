@@ -38,7 +38,7 @@ void TimelinePanel::Render() {
                 max_time = *std::max_element(summary.total_frame_ms.begin(), summary.total_frame_ms.end());
             }
 
-            ImPlot::SetupAxes("Frame", "Time (ms)", ImPlotAxisFlags_AutoFit, ImPlotAxisFlags_None);
+            ImPlot::SetupAxes(nullptr, "Time (ms)", ImPlotAxisFlags_AutoFit | ImPlotAxisFlags_NoLabel, ImPlotAxisFlags_None);
             ImPlot::SetupAxisLimits(ImAxis_Y1, 0.0, max_time * 1.2, ImPlotCond_Always);
             
             ImPlot::SetNextFillStyle(ImVec4(0.3f, 0.3f, 0.3f, 1.0f));
@@ -73,6 +73,23 @@ void TimelinePanel::Render() {
             if (b == 0 && e == 0 && count > 0) {
                 e = count - 1; 
             }
+
+            struct FpsRef { double ms; const char* label; ImU32 color; };
+            static const FpsRef fps_refs[] = {
+                {  8.333, "120fps", IM_COL32(100, 220, 100, 200) },
+                { 16.667,  "60fps", IM_COL32(220, 220,  80, 200) },
+                { 33.333,  "30fps", IM_COL32(220,  80,  80, 200) },
+            };
+            ImPlot::PushPlotClipRect();
+            ImDrawList* ref_dl = ImPlot::GetPlotDrawList();
+            for (const auto& ref : fps_refs) {
+                if (ref.ms > max_time * 1.2) continue;
+                ImVec2 p1 = ImPlot::PlotToPixels(-0.5,          ref.ms);
+                ImVec2 p2 = ImPlot::PlotToPixels(count - 0.5,   ref.ms);
+                ref_dl->AddLine(p1, p2, ref.color, 1.5f);
+                ref_dl->AddText(ImVec2(p1.x + 4.0f, p1.y - 14.0f), ref.color, ref.label);
+            }
+            ImPlot::PopPlotClipRect();
 
             ImPlot::DragLineX(0, &b, ImVec4(1.0f, 1.0f, 1.0f, 0.8f), 1.5f);
             ImPlot::DragLineX(1, &e, ImVec4(1.0f, 1.0f, 1.0f, 0.8f), 1.5f);

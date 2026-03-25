@@ -1,6 +1,7 @@
 #pragma once
 
 #include <optional>
+#include <string>
 #include <vector>
 
 #include "insight/registry.h"
@@ -38,6 +39,25 @@ struct TimelineSummary {
     std::vector<float>                                     total_frame_ms;
     std::vector<float>                                     unaccounted_ms;
     std::unordered_map<Descriptor::Id, std::vector<float>> tracks;
+};
+
+struct FlameScopeEntry {
+    Descriptor::Id id;
+    double         start_ms;
+    double         end_ms;
+    int            depth;
+};
+
+struct FlameTrack {
+    std::string                  label;
+    uint32_t                     track_id;
+    int                          max_depth;
+    std::vector<FlameScopeEntry> scopes;
+};
+
+struct FlameSummary {
+    double                  total_ms;
+    std::vector<FlameTrack> tracks;
 };
 
 } // namespace insight

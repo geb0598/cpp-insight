@@ -51,11 +51,12 @@ target_link_libraries(implot PUBLIC imgui)
 # -----------------------------------------------
 add_executable(cpp-insight-viewer WIN32
     src/main.cpp
-    src/viewer.cpp
-    src/toolbar_panel.cpp
+    src/flame_panel.cpp
     src/realtime_panel.cpp
-    src/timeline_panel.cpp
     src/stack_panel.cpp
+    src/timeline_panel.cpp
+    src/toolbar_panel.cpp
+    src/viewer.cpp
 )
 
 target_include_directories(cpp-insight-viewer

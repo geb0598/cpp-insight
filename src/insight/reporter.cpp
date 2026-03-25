@@ -31,7 +31,7 @@ std::vector<GroupSummary> Reporter::SummarizeByGroup(size_t count) const {
     for (auto it = begin; it != frames_.end(); ++it) {
         for (const auto& record : *it) {
             samples[record.id].push_back(
-                PlatformTime::ToMilli(record.duration)
+                PlatformTime::ToMilli(PlatformTime::Duration(record.end_ns - record.start_ns))
             );
         }
     }
@@ -101,7 +101,7 @@ std::vector<StackSummary> Reporter::SummarizeByStack(size_t begin, size_t end) c
         for (int j = static_cast<int>(frame.size()) - 1; j >= 0; --j) {
             const auto& record = frame[j];
 
-            double inclusive_ms = PlatformTime::ToMilli(record.duration);
+            double inclusive_ms = PlatformTime::ToMilli(PlatformTime::Duration(record.end_ns - record.start_ns));
 
             while (active_nodes.back().depth >= record.depth) {
                 auto popped = active_nodes.back();
@@ -182,10 +182,10 @@ TimelineSummary Reporter::GetTimelineSummary() const {
 
         for (const auto& record : frames_[i]) {
             if (record.id == Descriptor::FRAME_ID) {
-                frame_total = PlatformTime::ToMilli(record.duration);
+                frame_total = PlatformTime::ToMilli(PlatformTime::Duration(record.end_ns - record.start_ns));
                 summary.total_frame_ms[i] = static_cast<float>(frame_total);
             } else if (record.depth == 1) {
-                double ms = PlatformTime::ToMilli(record.duration);
+                double ms = PlatformTime::ToMilli(PlatformTime::Duration(record.end_ns - record.start_ns));
                 summary.tracks[record.id][i] += static_cast<float>(ms);
                 sum += ms;
             }
@@ -193,6 +193,46 @@ TimelineSummary Reporter::GetTimelineSummary() const {
 
         summary.unaccounted_ms[i] = static_cast<float>(std::max(0.0, frame_total - sum));
     }
+
+    return summary;
+}
+
+FlameSummary Reporter::GetFlameSummary() const {
+    std::lock_guard<std::mutex> lock(mutex_);
+    FlameSummary summary;
+
+    if (frames_.empty()) {
+        return summary;
+    }
+
+    std::unordered_map<uint32_t, FlameTrack> track_map;
+
+    for (const auto& frame : frames_) {
+        for (const auto& record : frame) {
+            auto& track = track_map[record.track_id];
+            if (track.scopes.empty()) {
+                track.track_id = record.track_id;
+                track.label    = "Thread #" + std::to_string(record.track_id);
+                track.max_depth = 0;
+            }
+            track.max_depth = std::max(track.max_depth, record.depth);
+
+            double start_ms = PlatformTime::ToMilli(PlatformTime::Duration(record.start_ns));
+            double end_ms   = PlatformTime::ToMilli(PlatformTime::Duration(record.end_ns));
+            track.scopes.push_back({ record.id, start_ms, end_ms, record.depth });
+
+            summary.total_ms = std::max(summary.total_ms, end_ms);
+        }
+    }
+
+    summary.tracks.reserve(track_map.size());
+    for (auto& [id, track] : track_map) {
+        summary.tracks.push_back(std::move(track));
+    }
+
+    std::sort(summary.tracks.begin(), summary.tracks.end(), [](const FlameTrack& lhs, const FlameTrack& rhs) {
+        return lhs.track_id < rhs.track_id;
+    });
 
     return summary;
 }

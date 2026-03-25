@@ -1,5 +1,6 @@
 #include "viewer.h"
 
+#include "flame_panel.h"
 #include "realtime_panel.h"
 #include "stack_panel.h"
 #include "timeline_panel.h"
@@ -35,6 +36,7 @@ bool Viewer::Init(HWND hwnd) {
     panels_.push_back(std::make_unique<ToolbarPanel>(ctx_));
     panels_.push_back(std::make_unique<RealtimePanel>(ctx_));
     panels_.push_back(std::make_unique<TimelinePanel>(ctx_));
+    panels_.push_back(std::make_unique<FlamePanel>(ctx_));
     panels_.push_back(std::make_unique<StackPanel>(ctx_));
 
     is_running_ = true;
@@ -165,8 +167,34 @@ void Viewer::Render() {
         ImGuiWindowFlags_NoScrollbar |
         ImGuiWindowFlags_NoScrollWithMouse);
 
-    for (auto& panel : panels_) {
-        panel->Render();
+    // for (auto& panel : panels_) {
+    //     panel->Render();
+    // }
+
+    // panels_[0] = ToolbarPanel
+    // panels_[1] = RealtimePanel
+    // panels_[2] = TimelinePanel
+    // panels_[3] = FlamePanel
+    // panels_[4] = StackPanel
+
+    panels_[0]->Render();
+    panels_[1]->Render();
+    panels_[2]->Render();
+
+    if (ImGui::BeginTable("##layout", 2,
+            ImGuiTableFlags_Resizable | ImGuiTableFlags_BordersInnerV,
+            ImVec2(-1, -1))) {
+        ImGui::TableSetupColumn("Left",  ImGuiTableColumnFlags_WidthStretch, 0.65f);
+        ImGui::TableSetupColumn("Right", ImGuiTableColumnFlags_WidthStretch, 0.35f);
+        ImGui::TableNextRow();
+
+        ImGui::TableSetColumnIndex(0);
+        panels_[3]->Render();
+
+        ImGui::TableSetColumnIndex(1);
+        panels_[4]->Render();
+
+        ImGui::EndTable();
     }
 
     ImGui::End();

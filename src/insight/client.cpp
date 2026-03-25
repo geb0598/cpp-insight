@@ -1,5 +1,6 @@
 #include "insight/archive.h"
 #include "insight/client.h"
+#include "insight/scope_profiler.h"
 
 namespace insight {
 
@@ -44,9 +45,11 @@ TransportResult Client::Receive(PacketHeader& out_header, ByteBuffer& out_payloa
 void Client::OnPacketReceived(const PacketHeader& header, const ByteBuffer& payload) {
     switch (header.type) {
     case PacketType::RECORDING_START:
+        ScopeProfiler::GetInstance().BeginRecording();
         SetState(ClientState::RECORDING);
         break;
     case PacketType::RECORDING_STOP:
+        ScopeProfiler::GetInstance().EndRecording();
         SetState(ClientState::CONNECTED);
         break;
     default:

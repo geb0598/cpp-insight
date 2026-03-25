@@ -11,7 +11,7 @@ void RealtimePanel::Render() {
     auto& reporter = Reporter::GetInstance();
     auto& registry = Registry::GetInstance();
 
-    ImGui::BeginChild("Realtime", ImVec2(0, ImGui::GetContentRegionAvail().y * 0.4f), true);
+    ImGui::BeginChild("Realtime", ImVec2(0, ImGui::GetContentRegionAvail().y * 0.32f), true);
 
     auto groups = reporter.SummarizeByGroup(SAMPLE_COUNT);
 
