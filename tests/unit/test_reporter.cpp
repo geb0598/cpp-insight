@@ -8,14 +8,15 @@ namespace {
 
 INSIGHT_DECLARE_STATGROUP("Physics", STATGROUP_PHYSICS);
 INSIGHT_DECLARE_STATGROUP("Rendering", STATGROUP_RENDERING);
-INSIGHT_DECLARE_CYCLE_STAT("Outer", STAT_OUTER, STATGROUP_PHYSICS);
-INSIGHT_DECLARE_CYCLE_STAT("Inner", STAT_INNER, STATGROUP_PHYSICS);
-INSIGHT_DECLARE_CYCLE_STAT("Draw",  STAT_DRAW,  STATGROUP_RENDERING);
+INSIGHT_DECLARE_STAT("Outer", STAT_OUTER, STATGROUP_PHYSICS);
+INSIGHT_DECLARE_STAT("Inner", STAT_INNER, STATGROUP_PHYSICS);
+INSIGHT_DECLARE_STAT("Draw",  STAT_DRAW,  STATGROUP_RENDERING);
 
 class ReporterTest : public ::testing::Test {
 protected:
     void SetUp() override {
         insight::ScopeProfiler::GetInstance().Clear();
+        insight::ScopeProfiler::GetInstance().BeginRecording();
         insight::Reporter::GetInstance().Clear();
     }
 };
@@ -23,7 +24,7 @@ protected:
 TEST_F(ReporterTest, SubmitIncreasesSize) {
     INSIGHT_FRAME_BEGIN();
     {
-        INSIGHT_SCOPE_CYCLE_COUNTER(STAT_OUTER);
+        INSIGHT_SCOPE(STAT_OUTER);
     }
     insight::Reporter::GetInstance().Submit(insight::ScopeProfiler::GetInstance().EndFrame());
 
@@ -34,13 +35,13 @@ TEST_F(ReporterTest, SummarizeByGroupReturnsCorrectGroups) {
     for (int i = 0; i < 5; ++i) {
         INSIGHT_FRAME_BEGIN();
         {
-            INSIGHT_SCOPE_CYCLE_COUNTER(STAT_OUTER);
+            INSIGHT_SCOPE(STAT_OUTER);
             {
-                INSIGHT_SCOPE_CYCLE_COUNTER(STAT_INNER);
+                INSIGHT_SCOPE(STAT_INNER);
             }
         }
         {
-            INSIGHT_SCOPE_CYCLE_COUNTER(STAT_DRAW);
+            INSIGHT_SCOPE(STAT_DRAW);
         }
         insight::Reporter::GetInstance().Submit(insight::ScopeProfiler::GetInstance().EndFrame());
     }
@@ -64,7 +65,7 @@ TEST_F(ReporterTest, SummarizeByGroupTimingIsPositive) {
     for (int i = 0; i < 5; ++i) {
         INSIGHT_FRAME_BEGIN();
         {
-            INSIGHT_SCOPE_CYCLE_COUNTER(STAT_OUTER);
+            INSIGHT_SCOPE(STAT_OUTER);
         }
         insight::Reporter::GetInstance().Submit(insight::ScopeProfiler::GetInstance().EndFrame());
     }
@@ -86,9 +87,9 @@ TEST_F(ReporterTest, SummarizeByStackInclusiveGeExclusive) {
     for (int i = 0; i < 5; ++i) {
         INSIGHT_FRAME_BEGIN();
         {
-            INSIGHT_SCOPE_CYCLE_COUNTER(STAT_OUTER);
+            INSIGHT_SCOPE(STAT_OUTER);
             {
-                INSIGHT_SCOPE_CYCLE_COUNTER(STAT_INNER);
+                INSIGHT_SCOPE(STAT_INNER);
             }
         }
         insight::Reporter::GetInstance().Submit(insight::ScopeProfiler::GetInstance().EndFrame());
@@ -111,9 +112,9 @@ TEST_F(ReporterTest, SummarizeByStackDepth) {
     for (int i = 0; i < 5; ++i) {
         INSIGHT_FRAME_BEGIN();
         {
-            INSIGHT_SCOPE_CYCLE_COUNTER(STAT_OUTER);
+            INSIGHT_SCOPE(STAT_OUTER);
             {
-                INSIGHT_SCOPE_CYCLE_COUNTER(STAT_INNER);
+                INSIGHT_SCOPE(STAT_INNER);
             }
         }
         insight::Reporter::GetInstance().Submit(insight::ScopeProfiler::GetInstance().EndFrame());

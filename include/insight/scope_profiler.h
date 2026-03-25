@@ -1,10 +1,20 @@
 #pragma once
 
+#include <functional>
+
 #include "insight/archive.h"
 #include "insight/platform_time.h"
 #include "insight/registry.h"
 
 namespace insight {
+
+// -------------------------------------------------
+// TrackId
+// -------------------------------------------------
+namespace TrackId {
+    constexpr uint32_t CPU_BASE = 0x00000000u;  // 0, 1, 2, ... (one per thread)
+    constexpr uint32_t GPU_BASE = 0x80000000u;  // 0x80000000, 0x80000001, ... (one per GPU device)
+}
 
 // -------------------------------------------------
 // ScopeRecord
@@ -43,15 +53,33 @@ public:
     ScopeProfiler(ScopeProfiler&&)                 = delete;
     ScopeProfiler& operator=(ScopeProfiler&&)      = delete;
 
+    void SetOnBeginRecording(std::function<void()> fn) {
+        on_begin_recording_ = std::move(fn);
+    }
+
+    void SetOnEndRecording(std::function<void()> fn) {
+        on_end_recording_ = std::move(fn);
+    }
+
     void BeginRecording() {
         recording_start_      = PlatformTime::Now();
         is_recording_started_ = true;
+        if (on_begin_recording_) {
+            on_begin_recording_();
+        }
     }
 
     void EndRecording() {
         is_recording_started_ = false;
         is_frame_started_     = false;
         stack_.clear();
+        if (on_end_recording_) {
+            on_end_recording_();
+        }
+    }
+
+    PlatformTime::TimePoint GetRecordingStart() const {
+        return recording_start_;
     }
 
     void BeginFrame() {
@@ -110,6 +138,9 @@ private:
     bool                    is_recording_started_ = false;
     bool                    is_frame_started_     = false;
     PlatformTime::TimePoint recording_start_;
+
+    std::function<void()>   on_begin_recording_;
+    std::function<void()>   on_end_recording_;
 };
 
 // -------------------------------------------------

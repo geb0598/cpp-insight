@@ -6,22 +6,23 @@ namespace {
 
 INSIGHT_DECLARE_STATGROUP("Test", STATGROUP_TEST);
 
-INSIGHT_DECLARE_CYCLE_STAT("Outer", STAT_OUTER, STATGROUP_TEST);
-INSIGHT_DECLARE_CYCLE_STAT("Inner", STAT_INNER, STATGROUP_TEST);
+INSIGHT_DECLARE_STAT("Outer", STAT_OUTER, STATGROUP_TEST);
+INSIGHT_DECLARE_STAT("Inner", STAT_INNER, STATGROUP_TEST);
 
 class ScopeProfilerTest : public ::testing::Test {
 protected:
     void SetUp() override {
         insight::ScopeProfiler::GetInstance().Clear();
+        insight::ScopeProfiler::GetInstance().BeginRecording();
     }
 };
 
 TEST_F(ScopeProfilerTest, FrameRecordCount) {
     INSIGHT_FRAME_BEGIN();
     {
-        INSIGHT_SCOPE_CYCLE_COUNTER(STAT_OUTER);
+        INSIGHT_SCOPE(STAT_OUTER);
         {
-            INSIGHT_SCOPE_CYCLE_COUNTER(STAT_INNER);
+            INSIGHT_SCOPE(STAT_INNER);
         }
     }
     auto frame = insight::ScopeProfiler::GetInstance().EndFrame();
@@ -32,9 +33,9 @@ TEST_F(ScopeProfilerTest, FrameRecordCount) {
 TEST_F(ScopeProfilerTest, DepthTracking) {
     INSIGHT_FRAME_BEGIN();
     {
-        INSIGHT_SCOPE_CYCLE_COUNTER(STAT_OUTER);
+        INSIGHT_SCOPE(STAT_OUTER);
         {
-            INSIGHT_SCOPE_CYCLE_COUNTER(STAT_INNER);
+            INSIGHT_SCOPE(STAT_INNER);
         }
     }
     auto frame = insight::ScopeProfiler::GetInstance().EndFrame();
@@ -49,7 +50,7 @@ TEST_F(ScopeProfilerTest, DepthTracking) {
 TEST_F(ScopeProfilerTest, DurationIsPositive) {
     INSIGHT_FRAME_BEGIN();
     {
-        INSIGHT_SCOPE_CYCLE_COUNTER(STAT_OUTER);
+        INSIGHT_SCOPE(STAT_OUTER);
     }
     auto frame = insight::ScopeProfiler::GetInstance().EndFrame();
 
@@ -59,7 +60,7 @@ TEST_F(ScopeProfilerTest, DurationIsPositive) {
 TEST_F(ScopeProfilerTest, FrameClearedOnBeginFrame) {
     INSIGHT_FRAME_BEGIN();
     {
-        INSIGHT_SCOPE_CYCLE_COUNTER(STAT_OUTER);
+        INSIGHT_SCOPE(STAT_OUTER);
     }
     INSIGHT_FRAME_END();
 

@@ -1,4 +1,5 @@
 #include <algorithm>
+#include <cassert>
 #include <numeric>
 #include <unordered_map>
 
@@ -8,28 +9,54 @@
 namespace insight {
 
 void Reporter::Submit(FrameRecord frame) {
+    if (frame.empty()) {
+        return;
+    }
+    uint32_t track_id  = frame.front().track_id;
+    auto     shared    = std::make_shared<const FrameRecord>(std::move(frame));
     std::lock_guard<std::mutex> lock(mutex_);
-    frames_.push_back(std::move(frame));
+    tracks_[track_id].push_back(std::move(shared));
 }
 
 void Reporter::Clear() {
     std::lock_guard<std::mutex> lock(mutex_);
-    frames_.clear();
+    tracks_.clear();
 }
 
-std::vector<GroupSummary> Reporter::SummarizeByGroup(size_t count) const {
+size_t Reporter::Size(uint32_t track_id) const {
     std::lock_guard<std::mutex> lock(mutex_);
+    auto it = tracks_.find(track_id);
+    return it != tracks_.end() ? it->second.size() : 0;
+}
 
-    if (frames_.empty()) {
-        return {};
+std::vector<SharedFrame> Reporter::GetTrack(uint32_t track_id) const {
+    std::lock_guard<std::mutex> lock(mutex_);
+    auto it = tracks_.find(track_id);
+    assert(it != tracks_.end());
+    return it->second;
+}
+
+bool Reporter::HasTrack(uint32_t track_id) const {
+    std::lock_guard<std::mutex> lock(mutex_);
+    return tracks_.find(track_id) != tracks_.end();
+}
+
+std::vector<GroupSummary> Reporter::SummarizeByGroup(size_t count, uint32_t track_id) const {
+    std::vector<SharedFrame> frames;
+    {
+        std::lock_guard<std::mutex> lock(mutex_);
+        auto it = tracks_.find(track_id);
+        if (it == tracks_.end() || it->second.empty()) {
+            return {};
+        }
+        const auto& all = it->second;
+        count = std::min(count, all.size());
+        frames.assign(all.end() - static_cast<std::ptrdiff_t>(count), all.end());
     }
 
-    count = std::min(count, frames_.size());
-    auto begin = frames_.end() - static_cast<std::ptrdiff_t>(count);
-
     std::unordered_map<Descriptor::Id, std::vector<double>> samples;
-    for (auto it = begin; it != frames_.end(); ++it) {
-        for (const auto& record : *it) {
+    for (const auto& frame : frames) {
+        for (const auto& record : *frame) {
             samples[record.id].push_back(
                 PlatformTime::ToMilli(PlatformTime::Duration(record.end_ns - record.start_ns))
             );
@@ -78,28 +105,33 @@ namespace {
     };
 }
 
-std::vector<StackSummary> Reporter::SummarizeByStack(size_t begin, size_t end) const {
-    if (frames_.empty() || begin >= frames_.size()) {
-        return {};
+std::vector<StackSummary> Reporter::SummarizeByStack(size_t begin, size_t end, uint32_t track_id) const {
+    std::vector<SharedFrame> frames;
+    {
+        std::lock_guard<std::mutex> lock(mutex_);
+        auto it = tracks_.find(track_id);
+        if (it == tracks_.end() || it->second.empty() || begin >= it->second.size()) {
+            return {};
+        }
+        const auto& all = it->second;
+        end = std::min(end, all.size());
+        frames.assign(
+            all.begin() + static_cast<std::ptrdiff_t>(begin),
+            all.begin() + static_cast<std::ptrdiff_t>(end));
     }
 
-    end = std::min(end, frames_.size());
-
     std::unordered_map<
-        Descriptor::Id, 
+        Descriptor::Id,
         std::unordered_map<Descriptor::Id, SampleData>> samples;
 
-    for (size_t i = begin; i < end; ++i) {
-        const auto& frame = frames_[i];
-
+    for (const auto& frame : frames) {
         std::vector<ActiveNode> active_nodes;
-
         active_nodes.push_back({
             Descriptor::INVALID_ID, Descriptor::INVALID_ID, -1, 0.0, 0.0
         });
 
-        for (int j = static_cast<int>(frame.size()) - 1; j >= 0; --j) {
-            const auto& record = frame[j];
+        for (int j = static_cast<int>(frame->size()) - 1; j >= 0; --j) {
+            const auto& record = (*frame)[j];
 
             double inclusive_ms = PlatformTime::ToMilli(PlatformTime::Duration(record.end_ns - record.start_ns));
 
@@ -116,9 +148,7 @@ std::vector<StackSummary> Reporter::SummarizeByStack(size_t begin, size_t end) c
             }
 
             Descriptor::Id parent_id = active_nodes.back().id;
-
             active_nodes.back().children_ms += inclusive_ms;
-
             active_nodes.push_back({
                 record.id, parent_id, record.depth, inclusive_ms, 0.0
             });
@@ -154,20 +184,25 @@ std::vector<StackSummary> Reporter::SummarizeByStack(size_t begin, size_t end) c
     return result;
 }
 
-TimelineSummary Reporter::GetTimelineSummary() const {
-    std::lock_guard<std::mutex> lock(mutex_);
-    TimelineSummary summary;
-    size_t frame_count = frames_.size();
-
-    if (frame_count == 0) {
-        return summary;
+TimelineSummary Reporter::GetTimelineSummary(uint32_t track_id) const {
+    std::vector<SharedFrame> frames;
+    {
+        std::lock_guard<std::mutex> lock(mutex_);
+        auto it = tracks_.find(track_id);
+        if (it == tracks_.end() || it->second.empty()) {
+            return {};
+        }
+        frames = it->second;
     }
+
+    TimelineSummary summary;
+    size_t frame_count = frames.size();
 
     summary.total_frame_ms.resize(frame_count, 0.0f);
     summary.unaccounted_ms.resize(frame_count, 0.0f);
 
     for (size_t i = 0; i < frame_count; ++i) {
-        for (const auto& record : frames_[i]) {
+        for (const auto& record : *frames[i]) {
             if (record.depth == 1) {
                 if (summary.tracks.find(record.id) == summary.tracks.end()) {
                     summary.tracks[record.id].resize(frame_count, 0.0f);
@@ -178,9 +213,9 @@ TimelineSummary Reporter::GetTimelineSummary() const {
 
     for (size_t i = 0; i < frame_count; ++i) {
         double frame_total = 0.0;
-        double sum = 0.0;
+        double sum         = 0.0;
 
-        for (const auto& record : frames_[i]) {
+        for (const auto& record : *frames[i]) {
             if (record.id == Descriptor::FRAME_ID) {
                 frame_total = PlatformTime::ToMilli(PlatformTime::Duration(record.end_ns - record.start_ns));
                 summary.total_frame_ms[i] = static_cast<float>(frame_total);
@@ -198,30 +233,32 @@ TimelineSummary Reporter::GetTimelineSummary() const {
 }
 
 FlameSummary Reporter::GetFlameSummary() const {
-    std::lock_guard<std::mutex> lock(mutex_);
-    FlameSummary summary;
-
-    if (frames_.empty()) {
-        return summary;
+    std::unordered_map<uint32_t, std::vector<SharedFrame>> snapshot;
+    {
+        std::lock_guard<std::mutex> lock(mutex_);
+        snapshot = tracks_;
     }
 
+    FlameSummary summary;
     std::unordered_map<uint32_t, FlameTrack> track_map;
 
-    for (const auto& frame : frames_) {
-        for (const auto& record : frame) {
-            auto& track = track_map[record.track_id];
-            if (track.scopes.empty()) {
-                track.track_id = record.track_id;
-                track.label    = "Thread #" + std::to_string(record.track_id);
-                track.max_depth = 0;
+    for (const auto& [track_id, frames] : snapshot) {
+        for (const auto& frame : frames) {
+            for (const auto& record : *frame) {
+                auto& track = track_map[record.track_id];
+                if (track.scopes.empty()) {
+                    track.label     = "Thread #" + std::to_string(record.track_id);
+                    track.track_id  = record.track_id;
+                    track.max_depth = 0;
+                }
+                track.max_depth = std::max(track.max_depth, record.depth);
+
+                double start_ms = PlatformTime::ToMilli(PlatformTime::Duration(record.start_ns));
+                double end_ms   = PlatformTime::ToMilli(PlatformTime::Duration(record.end_ns));
+                track.scopes.push_back({ record.id, start_ms, end_ms, record.depth });
+
+                summary.total_ms = std::max(summary.total_ms, end_ms);
             }
-            track.max_depth = std::max(track.max_depth, record.depth);
-
-            double start_ms = PlatformTime::ToMilli(PlatformTime::Duration(record.start_ns));
-            double end_ms   = PlatformTime::ToMilli(PlatformTime::Duration(record.end_ns));
-            track.scopes.push_back({ record.id, start_ms, end_ms, record.depth });
-
-            summary.total_ms = std::max(summary.total_ms, end_ms);
         }
     }
 
@@ -245,7 +282,7 @@ TimingSummary Reporter::ComputeTiming(std::vector<double> ms_values) const {
     std::sort(ms_values.begin(), ms_values.end());
 
     size_t count = ms_values.size();
-    double sum = std::accumulate(ms_values.begin(), ms_values.end(), 0.0);
+    double sum   = std::accumulate(ms_values.begin(), ms_values.end(), 0.0);
 
     TimingSummary timing;
     timing.avg_ms = sum / count;

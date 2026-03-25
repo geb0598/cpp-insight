@@ -44,6 +44,8 @@ bool Viewer::Init(HWND hwnd) {
 }
 
 void Viewer::Shutdown() {
+    Server::GetInstance().Stop();
+
     ImPlot::DestroyContext();
     ImGui_ImplDX11_Shutdown();
     ImGui_ImplWin32_Shutdown();

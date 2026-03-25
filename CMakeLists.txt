@@ -32,6 +32,7 @@ target_compile_features(cpp-insight-core PUBLIC cxx_std_17)
 if (WIN32)
     add_library(cpp-insight-gpu STATIC
         src/insight/gpu/gpu_profiler.cpp
+        src/insight/gpu/d3d11_gpu_profiler_backend.cpp
     )
 
     target_include_directories(cpp-insight-gpu

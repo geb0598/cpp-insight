@@ -101,6 +101,8 @@ void Client::ConnectWorker() {
 }
 
 TransportResult Client::SendHandshake() {
+    Descriptor::GetFrameDescriptor();
+
     BinaryWriter writer;
 
     auto& groups = Registry::GetInstance().GetGroups();
