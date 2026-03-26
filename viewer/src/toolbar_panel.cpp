@@ -95,7 +95,7 @@ void ToolbarPanel::Render() {
             }
             ImGui::SameLine();
             if (ImGui::Button("Record")) {
-                server.StartRecording();
+                server.StartSession();
                 context.server_state = ServerState::RECORDING;
                 context.needs_reset = true;
                 context.timeline_begin = 0;
@@ -112,7 +112,7 @@ void ToolbarPanel::Render() {
             }
             ImGui::SameLine();
             if (ImGui::Button("Stop Recording")) {
-                server.StopRecording();
+                server.StopSession();
                 context.server_state = ServerState::CONNECTED;
                 context.timeline_end = insights::Reporter::GetInstance().Size();
             }

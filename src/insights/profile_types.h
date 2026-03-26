@@ -46,6 +46,7 @@ struct FlameScopeEntry {
     double         start_ms;
     double         end_ms;
     int            depth;
+    size_t         frame_index;
 };
 
 struct FlameTrack {

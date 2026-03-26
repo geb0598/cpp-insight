@@ -53,21 +53,21 @@ void Server::Stop() {
     }
 }
 
-void Server::StartRecording() {
+void Server::StartSession() {
     if (!IsConnected()) {
         return;
     }
     Reporter::GetInstance().Clear();
     state_ = ServerState::RECORDING;
-    EnqueuePacket(PacketType::RECORDING_START, {});
+    EnqueuePacket(PacketType::SESSION_START, {});
 }
 
-void Server::StopRecording() {
+void Server::StopSession() {
     if (!IsRecording()) {
         return;
     }
     SetState(ServerState::CONNECTED);
-    EnqueuePacket(PacketType::RECORDING_STOP, {});
+    EnqueuePacket(PacketType::SESSION_STOP, {});
 }
 
 TransportResult Server::Send(PacketType type, const ByteBuffer& payload) {

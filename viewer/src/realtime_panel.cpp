@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <imgui.h>
 
 #include "insights/registry.h"
@@ -14,6 +15,8 @@ void RealtimePanel::Render() {
     ImGui::BeginChild("Realtime", ImVec2(0, ImGui::GetContentRegionAvail().y * 0.32f), true);
 
     auto groups = reporter.SummarizeByGroup(SAMPLE_COUNT);
+    std::stable_partition(groups.begin(), groups.end(),
+        [](const GroupSummary& g) { return g.group_id == Group::FRAME_ID; });
 
     for (const auto& group : groups) {
         auto* g = registry.FindGroup(group.group_id);

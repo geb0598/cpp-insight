@@ -25,7 +25,7 @@ int WINAPI WinMain(HINSTANCE hinstance, HINSTANCE, LPSTR, int) {
     HWND hwnd = CreateWindowW(
         wc.lpszClassName, L"cpp-insights",
         WS_OVERLAPPEDWINDOW,
-        100, 100, 1280, 720,
+        100, 100, 1280, 960,
         nullptr, nullptr,
         hinstance, nullptr);
 

@@ -24,27 +24,28 @@ void StackPanel::Render() {
     auto& context  = GetContext();
     auto& reporter = Reporter::GetInstance();
 
+    bool is_recording = (context.server_state == ServerState::RECORDING);
+
     size_t cpu_size = reporter.Size(TrackId::CPU_BASE);
     size_t gpu_size = reporter.Size(TrackId::GPU_BASE);
 
     size_t cpu_begin = context.timeline_begin;
     size_t cpu_end   = context.timeline_end + 1;
 
-    // Use raw timeline values — SummarizeByStack clamps internally.
-    // Clamping here caused gpu_end to always equal gpu_size when the
-    // selection extends past the available GPU frame count, so the
-    // GPU tab never updated when the user moved the right marker.
     size_t gpu_begin = context.timeline_begin;
     size_t gpu_end   = context.timeline_end + 1;
 
     ImGui::BeginChild("Stack", ImVec2(0, 0), true);
 
+    if (is_recording)
+        ImGui::TextDisabled("Recording in progress...");
+
     if (ImGui::BeginTabBar("StackTabs")) {
 
         if (ImGui::BeginTabItem("CPU")) {
-            ImGui::Text("Frame %zu ~ %zu", context.timeline_begin, context.timeline_end);
+            ImGui::Text("Frame %zu ~ %zu (%zu CPU frames total)", context.timeline_begin, context.timeline_end, cpu_size);
             ImGui::Separator();
-            DrawTrackSection(TrackId::CPU_BASE, cpu_begin, cpu_end, cpu_cache_, "CpuStackTable");
+            DrawTrackSection(TrackId::CPU_BASE, cpu_begin, cpu_end, cpu_cache_, "CpuStackTable", is_recording);
             ImGui::EndTabItem();
         }
 
@@ -53,7 +54,7 @@ void StackPanel::Render() {
                 ImGui::Text("Frame %zu ~ %zu  (%zu GPU frames total)",
                             gpu_begin, gpu_end > 0 ? gpu_end - 1 : 0, gpu_size);
                 ImGui::Separator();
-                DrawTrackSection(TrackId::GPU_BASE, gpu_begin, gpu_end, gpu_cache_, "GpuStackTable");
+                DrawTrackSection(TrackId::GPU_BASE, gpu_begin, gpu_end, gpu_cache_, "GpuStackTable", is_recording);
                 ImGui::EndTabItem();
             }
         }
@@ -65,13 +66,14 @@ void StackPanel::Render() {
 }
 
 void StackPanel::DrawTrackSection(uint32_t track_id, size_t begin, size_t end,
-                                  CachedTrack& cache, const char* table_id) {
+                                  CachedTrack& cache, const char* table_id, bool is_recording) {
     auto& reporter   = Reporter::GetInstance();
     size_t track_size = reporter.Size(track_id);
 
-    if (begin != cache.last_begin     ||
-        end   != cache.last_end       ||
-        track_size != cache.last_track_size) {
+    if (!is_recording &&
+        (begin != cache.last_begin     ||
+         end   != cache.last_end       ||
+         track_size != cache.last_track_size)) {
         if (begin < end) {
             cache.data = reporter.SummarizeByStack(begin, end, track_id);
         } else {

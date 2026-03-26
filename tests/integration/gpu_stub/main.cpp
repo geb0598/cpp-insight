@@ -15,10 +15,7 @@
 #pragma comment(lib, "d3d11.lib")
 #pragma comment(lib, "d3dcompiler.lib")
 
-#include "insights/insight.h"
-#include "insights/gpu/gpu_profiler.h"
-#include "insights/gpu/gpu_profiler_backend.h"
-#include "insights/gpu/d3d11_gpu_profiler_backend.h"
+#include "insights/insight_d3d11.h"
 
 INSIGHTS_DECLARE_STATGROUP("Rendering", STATGROUP_RENDERING);
 
@@ -215,8 +212,7 @@ int main() {
     ShowWindow(hwnd, SW_SHOWDEFAULT);
     UpdateWindow(hwnd);
 
-    insights::GpuProfiler::GetInstance().Init(
-        std::make_unique<insights::D3D11GpuProfilerBackend>(device.Get(), context.Get()));
+    INSIGHTS_GPU_INIT_D3D11(device.Get(), context.Get());
 
     INSIGHTS_INITIALIZE();
     std::cout << "Insight connected. Running DX11 loop...\n";

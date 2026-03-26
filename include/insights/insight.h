@@ -26,6 +26,10 @@
 
 #if defined(INSIGHTS_GPU)
 
+#define INSIGHTS_GPU_INIT_D3D11(device, context) \
+    insights::GpuProfiler::GetInstance().Init( \
+        std::make_unique<insights::D3D11GpuProfilerBackend>(device, context))
+
 #define INSIGHTS_GPU_IMPL_FRAME_BEGIN() \
     insights::GpuProfiler::GetInstance().BeginFrame();
 
@@ -53,6 +57,7 @@
 
 #else
 
+#define INSIGHTS_GPU_INIT_D3D11(device, context)
 #define INSIGHTS_GPU_IMPL_FRAME_BEGIN()
 #define INSIGHTS_GPU_IMPL_FRAME_END()
 #define INSIGHTS_GPU_SCOPE(stat)

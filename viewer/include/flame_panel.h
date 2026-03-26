@@ -19,6 +19,7 @@ public:
 private:
     FlameSummary cached_summary_;
     size_t       cached_frame_count_ = 0;
+    double       x_range_ms_         = 0.0;
 };
 
 } // namespace insightss::viewer

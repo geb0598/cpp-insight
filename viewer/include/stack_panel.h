@@ -30,7 +30,7 @@ private:
                   const std::unordered_map<Descriptor::Id, std::vector<const StackSummary*>>& tree);
 
     void DrawTrackSection(uint32_t track_id, size_t begin, size_t end,
-                          CachedTrack& cache, const char* table_id);
+                          CachedTrack& cache, const char* table_id, bool is_recording);
 
     CachedTrack cpu_cache_;
     CachedTrack gpu_cache_;

@@ -262,8 +262,8 @@ FlameSummary Reporter::GetFlameSummary() const {
     std::unordered_map<uint32_t, FlameTrack> track_map;
 
     for (const auto& [track_id, frames] : snapshot) {
-        for (const auto& frame : frames) {
-            for (const auto& record : *frame) {
+        for (size_t frame_index = 0; frame_index < frames.size(); ++frame_index) {
+            for (const auto& record : *frames[frame_index]) {
                 auto& track = track_map[record.track_id];
                 if (track.scopes.empty()) {
                     if (record.track_id >= TrackId::GPU_BASE) {
@@ -278,7 +278,7 @@ FlameSummary Reporter::GetFlameSummary() const {
 
                 double start_ms = PlatformTime::ToMilli(PlatformTime::Duration(record.start_ns));
                 double end_ms   = PlatformTime::ToMilli(PlatformTime::Duration(record.end_ns));
-                track.scopes.push_back({ record.id, start_ms, end_ms, record.depth });
+                track.scopes.push_back({ record.id, start_ms, end_ms, record.depth, frame_index });
 
                 summary.total_ms = std::max(summary.total_ms, end_ms);
             }

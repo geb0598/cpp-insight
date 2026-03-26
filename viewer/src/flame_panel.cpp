@@ -41,10 +41,15 @@ void DrawTrack(const FlameTrack& track, int y_base, ImDrawList* dl) {
         ImVec2 p_min = ImPlot::PlotToPixels(scope.start_ms, plot_y_top);
         ImVec2 p_max = ImPlot::PlotToPixels(scope.end_ms,   plot_y_bot);
  
-        if (p_min.y > p_max.y) std::swap(p_min.y, p_max.y);
+        if (p_min.y > p_max.y) {
+            std::swap(p_min.y, p_max.y);
+        }
  
         float width_px = p_max.x - p_min.x;
-        if (width_px < 0.5f) continue;
+        if (width_px < 1.0f) {
+            p_max.x = p_min.x + 1.0f;
+            width_px = 1.0f;
+        }
  
         dl->AddRectFilled(p_min, p_max, GetColorFromId(scope.id));
  
@@ -69,7 +74,8 @@ void DrawTrack(const FlameTrack& track, int y_base, ImDrawList* dl) {
             ImGui::Text("%.4f ms  (start: %.4f ms)",
                         scope.end_ms - scope.start_ms,
                         scope.start_ms);
-            ImGui::Text("depth: %d  |  track: %u", scope.depth, track.track_id);
+            ImGui::Text("depth: %d  |  track: %s", scope.depth, track.label.c_str());
+            ImGui::Text("frame: #%zu", scope.frame_index);
             ImGui::EndTooltip();
         }
     }
@@ -78,17 +84,25 @@ void DrawTrack(const FlameTrack& track, int y_base, ImDrawList* dl) {
 } // namespace
 
 void FlamePanel::Render() {
+    auto& context  = GetContext();
     auto& reporter = Reporter::GetInstance();
- 
-    size_t current_count = reporter.TotalSize();
-    if (current_count != cached_frame_count_) {
-        cached_summary_     = reporter.GetFlameSummary();
-        cached_frame_count_ = current_count;
+
+    bool is_recording = (context.server_state == ServerState::RECORDING);
+
+    if (!is_recording) {
+        size_t current_count = reporter.TotalSize();
+        if (current_count != cached_frame_count_) {
+            cached_summary_     = reporter.GetFlameSummary();
+            cached_frame_count_ = current_count;
+        }
     }
- 
+
     if (cached_summary_.tracks.empty()) {
-        ImGui::BeginChild("FlameGraph", ImVec2(0, 150), true);
-        ImGui::TextDisabled("Waiting for profile data...");
+        ImGui::BeginChild("FlameGraph", ImVec2(0, 0), true);
+        if (is_recording)
+            ImGui::TextDisabled("Recording in progress...");
+        else
+            ImGui::TextDisabled("Waiting for profile data...");
         ImGui::EndChild();
         return;
     }
@@ -101,12 +115,14 @@ void FlamePanel::Render() {
     }
     int total_rows = y_cursor;
  
-    const float row_height_px = 20.0f;
+    const float row_height_px = 25.0f;
     float avail_h  = ImGui::GetContentRegionAvail().y;
-    double y_range = std::max(static_cast<double>(total_rows) + 1.0,
-                              static_cast<double>(avail_h / row_height_px));
+    double y_range = static_cast<double>(avail_h / row_height_px);
 
     ImGui::BeginChild("FlameGraph", ImVec2(0, 0), true);
+
+    if (is_recording)
+        ImGui::TextDisabled("Recording in progress...");
 
     if (!ImPlot::BeginPlot("##Flame", ImVec2(-1, -1),
                            ImPlotFlags_NoLegend | ImPlotFlags_NoMenus)) {
@@ -114,18 +130,27 @@ void FlamePanel::Render() {
         return;
     }
  
-    ImPlot::SetupAxes("Time (s)", nullptr,
+    ImPlot::SetupAxes("Time", nullptr,
                       ImPlotAxisFlags_None,
                       ImPlotAxisFlags_Invert       |
                       ImPlotAxisFlags_NoTickLabels |
                       ImPlotAxisFlags_NoGridLines  |
                       ImPlotAxisFlags_Lock);
-    ImPlot::SetupAxisFormat(ImAxis_X1, [](double ms, char* buf, int size, void*) -> int {
-        return snprintf(buf, size, "%.2fs", ms * 1e-3);
-    }, nullptr);
+    ImPlot::SetupAxisFormat(ImAxis_X1, [](double ms, char* buf, int size, void* data) -> int {
+        double range = *static_cast<double*>(data);
+        if (range < 1000.0)
+            return snprintf(buf, size, "%.2fms", ms);
+        else
+            return snprintf(buf, size, "%.2fs", ms * 1e-3);
+    }, &x_range_ms_);
 
     ImPlot::SetupAxisLimits(ImAxis_X1, 0.0, cached_summary_.total_ms, ImPlotCond_Once);
-    ImPlot::SetupAxisLimits(ImAxis_Y1, -0.5, y_range, ImPlotCond_Always);
+    ImPlot::SetupAxisLimits(ImAxis_Y1, -0.5, y_range - 0.5, ImPlotCond_Once);
+
+    {
+        ImPlotRect lims = ImPlot::GetPlotLimits(ImAxis_X1, ImAxis_Y1);
+        x_range_ms_ = lims.X.Max - lims.X.Min;
+    }
  
     for (size_t i = 0; i < cached_summary_.tracks.size(); ++i) {
         ImPlot::Annotation(0.0, static_cast<double>(y_bases[i]),

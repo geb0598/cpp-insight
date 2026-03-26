@@ -44,8 +44,8 @@ public:
     void Listen();
     void Stop();
 
-    void StartRecording();
-    void StopRecording();
+    void StartSession();
+    void StopSession();
 
     void SaveSession(const std::filesystem::path& path);
     void LoadSession(const std::filesystem::path& path);

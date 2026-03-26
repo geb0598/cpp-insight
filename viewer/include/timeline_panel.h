@@ -17,7 +17,8 @@ public:
     void Reset()  override;
 
 private:
-    bool reset_view_ = true;
+    bool reset_view_    = true;
+    bool was_recording_ = false;
 };
 
 } // namespace insightss::viewer

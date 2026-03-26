@@ -44,11 +44,11 @@ TransportResult Client::Receive(PacketHeader& out_header, ByteBuffer& out_payloa
 
 void Client::OnPacketReceived(const PacketHeader& header, const ByteBuffer& payload) {
     switch (header.type) {
-    case PacketType::RECORDING_START:
+    case PacketType::SESSION_START:
         ScopeProfiler::GetInstance().BeginRecording();
         SetState(ClientState::RECORDING);
         break;
-    case PacketType::RECORDING_STOP:
+    case PacketType::SESSION_STOP:
         ScopeProfiler::GetInstance().EndRecording();
         SetState(ClientState::CONNECTED);
         break;

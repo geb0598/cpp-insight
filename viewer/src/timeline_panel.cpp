@@ -24,6 +24,11 @@ void TimelinePanel::Render() {
     auto& reporter = Reporter::GetInstance();
     auto& registry = Registry::GetInstance();
 
+    bool is_recording = (context.server_state == ServerState::RECORDING);
+    if (was_recording_ && !is_recording)
+        reset_view_ = true;
+    was_recording_ = is_recording;
+
     auto summary = reporter.GetTimelineSummary();
     int count = static_cast<int>(summary.total_frame_ms.size());
 
@@ -39,10 +44,15 @@ void TimelinePanel::Render() {
                 max_time = *std::max_element(summary.total_frame_ms.begin(), summary.total_frame_ms.end());
             }
 
-            ImPlot::SetupAxes(nullptr, "Time (ms)", ImPlotAxisFlags_NoLabel, ImPlotAxisFlags_None);
+            ImPlotAxisFlags x_flags = ImPlotAxisFlags_NoLabel;
+            if (is_recording) x_flags |= ImPlotAxisFlags_Lock;
+
+            ImPlot::SetupAxes(nullptr, "Time (ms)", x_flags, ImPlotAxisFlags_None);
             ImPlot::SetupAxisLimits(ImAxis_Y1, 0.0, max_time * 1.2, ImPlotCond_Always);
 
-            if (reset_view_) {
+            if (is_recording) {
+                ImPlot::SetupAxisLimits(ImAxis_X1, -0.5, count - 0.5, ImPlotCond_Always);
+            } else if (reset_view_) {
                 ImPlot::SetupAxisLimits(ImAxis_X1, -0.5, count - 0.5, ImPlotCond_Always);
                 reset_view_ = false;
             }

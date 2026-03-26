@@ -186,8 +186,8 @@ void Viewer::Render() {
     if (ImGui::BeginTable("##layout", 2,
             ImGuiTableFlags_Resizable | ImGuiTableFlags_BordersInnerV,
             ImVec2(-1, -1))) {
-        ImGui::TableSetupColumn("Left",  ImGuiTableColumnFlags_WidthStretch, 0.65f);
-        ImGui::TableSetupColumn("Right", ImGuiTableColumnFlags_WidthStretch, 0.35f);
+        ImGui::TableSetupColumn("Left",  ImGuiTableColumnFlags_WidthStretch, 0.50f);
+        ImGui::TableSetupColumn("Right", ImGuiTableColumnFlags_WidthStretch, 0.50f);
         ImGui::TableNextRow();
 
         ImGui::TableSetColumnIndex(0);
