@@ -45,6 +45,16 @@ size_t Reporter::TotalSize() const {
     return total;
 }
 
+std::vector<uint32_t> Reporter::GetTrackIds() const {
+    std::lock_guard<std::mutex> lock(mutex_);
+    std::vector<uint32_t> ids;
+    ids.reserve(tracks_.size());
+    for (const auto& [id, _] : tracks_) {
+        ids.push_back(id);
+    }
+    return ids;
+}
+
 bool Reporter::HasTrack(uint32_t track_id) const {
     std::lock_guard<std::mutex> lock(mutex_);
     return tracks_.find(track_id) != tracks_.end();

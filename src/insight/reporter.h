@@ -38,6 +38,7 @@ public:
     FlameSummary               GetFlameSummary() const;
 
     std::vector<SharedFrame>   GetTrack(uint32_t track_id) const;
+    std::vector<uint32_t>      GetTrackIds()               const;
     bool                       HasTrack(uint32_t track_id) const;
 
 private:

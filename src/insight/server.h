@@ -2,6 +2,7 @@
 
 #include <atomic>
 #include <deque>
+#include <filesystem>
 #include <future>
 #include <memory>
 #include <thread>
@@ -33,6 +34,8 @@ public:
         return instance;
     }
 
+    static std::filesystem::path GenerateSessionFilename();
+
     Server(const Server&)            = delete;
     Server& operator=(const Server&) = delete;
     Server(Server&&)                 = delete;
@@ -43,6 +46,9 @@ public:
 
     void StartRecording();
     void StopRecording();
+
+    void SaveSession(const std::filesystem::path& path);
+    void LoadSession(const std::filesystem::path& path);
 
     ServerState GetState()    const { return state_.load(); }
     bool        IsListening() const { return state_ == ServerState::LISTENING; }

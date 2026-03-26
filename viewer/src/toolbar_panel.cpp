@@ -1,3 +1,7 @@
+#include <array>
+#include <windows.h>
+#include <commdlg.h>
+
 #include <imgui.h>
 
 #include "insight/reporter.h"
@@ -7,15 +11,57 @@
 namespace insight::viewer {
 
 void ToolbarPanel::Render() {
-    auto& server = Server::GetInstance();
+    auto& server  = Server::GetInstance();
     auto& context = GetContext();
 
     if (ImGui::Button("Save")) {
-        // @todo
+        auto default_name = Server::GenerateSessionFilename().string();
+
+        std::array<char, MAX_PATH> path_buf{};
+        std::copy(default_name.begin(), default_name.end(), path_buf.begin());
+
+        OPENFILENAMEA ofn{};
+        ofn.lStructSize = sizeof(ofn);
+        ofn.lpstrFilter = "Trace Files (*.trace)\0*.trace\0All Files (*.*)\0*.*\0";
+        ofn.lpstrFile   = path_buf.data();
+        ofn.nMaxFile    = static_cast<DWORD>(path_buf.size());
+        ofn.lpstrDefExt = "trace";
+        ofn.Flags       = OFN_OVERWRITEPROMPT;
+
+        if (GetSaveFileNameA(&ofn)) {
+            try {
+                server.SaveSession(path_buf.data());
+                status_message_ = "Saved: " + std::string(path_buf.data());
+            } catch (const std::exception& e) {
+                status_message_ = std::string("Save failed: ") + e.what();
+            }
+        }
     }
     ImGui::SameLine();
     if (ImGui::Button("Load")) {
-        // @todo
+        std::array<char, MAX_PATH> path_buf{};
+
+        OPENFILENAMEA ofn{};
+        ofn.lStructSize = sizeof(ofn);
+        ofn.lpstrFilter = "Trace Files (*.trace)\0*.trace\0All Files (*.*)\0*.*\0";
+        ofn.lpstrFile   = path_buf.data();
+        ofn.nMaxFile    = static_cast<DWORD>(path_buf.size());
+        ofn.lpstrDefExt = "trace";
+        ofn.Flags       = OFN_FILEMUSTEXIST | OFN_PATHMUSTEXIST;
+
+        if (GetOpenFileNameA(&ofn)) {
+            try {
+                server.Stop();
+                server.LoadSession(path_buf.data());
+                context.server_state   = ServerState::OFFLINE;
+                context.needs_reset    = true;
+                context.timeline_begin = 0;
+                context.timeline_end   = Reporter::GetInstance().Size();
+                status_message_ = "Loaded: " + std::string(path_buf.data());
+            } catch (const std::exception& e) {
+                status_message_ = std::string("Load failed: ") + e.what();
+            }
+        }
     }
     ImGui::SameLine();
     
@@ -76,6 +122,10 @@ void ToolbarPanel::Render() {
     }
 
     ImGui::Separator();
+
+    if (!status_message_.empty()) {
+        ImGui::TextDisabled("%s", status_message_.c_str());
+    }
 }
 
 } // namespace insight::viewer

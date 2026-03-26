@@ -1,5 +1,7 @@
 #pragma once
 
+#include <string>
+
 #include "panel.h"
 #include "insight/server.h"
 
@@ -13,6 +15,9 @@ public:
     ToolbarPanel(PanelContext& ctx) : Panel(ctx) {}
 
     void Render() override;
+
+private:
+    std::string status_message_;
 };
 
 } // namespace insight::viewer

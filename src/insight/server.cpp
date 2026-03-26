@@ -1,8 +1,23 @@
+#include <chrono>
+#include <ctime>
+#include <filesystem>
+
 #include "insight/archive.h"
 #include "insight/reporter.h"
 #include "insight/server.h"
+#include "insight/windows_archive.h"
 
 namespace insight {
+    
+std::filesystem::path Server::GenerateSessionFilename() {
+    auto      now    = std::chrono::system_clock::now();
+    auto      time_t = std::chrono::system_clock::to_time_t(now);
+    struct tm tm_info {};
+    localtime_s(&tm_info, &time_t);
+    char buf[32];
+    strftime(buf, sizeof(buf), "%Y-%m-%d_%H-%M-%S", &tm_info);
+    return std::filesystem::path(std::string(buf) + ".trace");
+}
 
 void Server::Listen() {
     StopWorkers();
@@ -111,6 +126,126 @@ void Server::AcceptWorker() {
     state_ = ServerState::CONNECTED;
     NotifyConnected();
     StartWorkers();
+}
+
+namespace {
+    constexpr uint32_t FILE_MAGIC   = 0x494E5347u; // 'INSG'
+    constexpr uint16_t FILE_VERSION = 1;
+} // namespace
+
+void Server::SaveSession(const std::filesystem::path& path) {
+    std::filesystem::path tmp_path = path;
+    tmp_path += ".tmp";
+
+    {
+        WindowsBinaryWriter ar(tmp_path);
+
+        uint32_t magic    = FILE_MAGIC;
+        uint16_t version  = FILE_VERSION;
+        uint16_t reserved = 0;
+        ar << magic << version << reserved;
+
+        auto& registry = Registry::GetInstance();
+        auto& groups   = registry.GetGroups();
+        auto& descs    = registry.GetDescriptors();
+
+        int32_t group_count = static_cast<int32_t>(groups.size());
+        ar << group_count;
+        for (auto& [id, group] : groups) {
+            ar << *group;
+        }
+
+        int32_t desc_count = static_cast<int32_t>(descs.size());
+        ar << desc_count;
+        for (auto& [id, desc] : descs) {
+            ar << *desc;
+        }
+
+        auto& reporter  = Reporter::GetInstance();
+        auto  track_ids = reporter.GetTrackIds();
+
+        uint32_t track_count = static_cast<uint32_t>(track_ids.size());
+        ar << track_count;
+
+        for (uint32_t track_id : track_ids) {
+            auto frames = reporter.GetTrack(track_id);
+            ar << track_id;
+
+            uint32_t frame_count = static_cast<uint32_t>(frames.size());
+            ar << frame_count;
+
+            for (const auto& shared_frame : frames) {
+                auto frame = *shared_frame;
+                ar << frame;
+            }
+        }
+
+        ar.Close();
+    }
+
+    std::filesystem::remove(path);
+    std::error_code ec;
+    std::filesystem::rename(tmp_path, path, ec);
+    if (ec) {
+        std::filesystem::remove(tmp_path);
+        throw std::system_error(ec, "insight::Server::SaveSession: rename failed");
+    }
+}
+
+void Server::LoadSession(const std::filesystem::path& path) {
+    WindowsBinaryReader ar(path);
+
+    uint32_t magic    = 0;
+    uint16_t version  = 0;
+    uint16_t reserved = 0;
+    ar << magic << version << reserved;
+
+    if (magic != FILE_MAGIC) {
+        throw std::system_error(std::make_error_code(std::errc::invalid_argument),
+                                "insight::Server::LoadSession: invalid file magic");
+    }
+    if (version != FILE_VERSION) {
+        throw std::system_error(std::make_error_code(std::errc::not_supported),
+                                "insight::Server::LoadSession: unsupported version");
+    }
+
+    Registry::GetInstance().Clear();
+    Reporter::GetInstance().Clear();
+    owned_groups_.clear();
+    owned_descs_.clear();
+
+    int32_t group_count = 0;
+    ar << group_count;
+    for (int32_t i = 0; i < group_count; ++i) {
+        auto group = std::make_unique<Group>();
+        ar << *group;
+        Registry::GetInstance().RegisterGroup(group.get());
+        owned_groups_.push_back(std::move(group));
+    }
+
+    int32_t desc_count = 0;
+    ar << desc_count;
+    for (int32_t i = 0; i < desc_count; ++i) {
+        auto desc = std::make_unique<Descriptor>();
+        ar << *desc;
+        Registry::GetInstance().RegisterDescriptor(desc.get());
+        owned_descs_.push_back(std::move(desc));
+    }
+
+    uint32_t track_count = 0;
+    ar << track_count;
+
+    for (uint32_t t = 0; t < track_count; ++t) {
+        uint32_t track_id    = 0;
+        uint32_t frame_count = 0;
+        ar << track_id << frame_count;
+
+        for (uint32_t f = 0; f < frame_count; ++f) {
+            FrameRecord frame;
+            ar << frame;
+            Reporter::GetInstance().Submit(std::move(frame));
+        }
+    }
 }
 
 void Server::OnHandshake(const ByteBuffer& data) {
