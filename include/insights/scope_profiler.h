@@ -2,11 +2,11 @@
 
 #include <functional>
 
-#include "insight/archive.h"
-#include "insight/platform_time.h"
-#include "insight/registry.h"
+#include "insights/archive.h"
+#include "insights/platform_time.h"
+#include "insights/registry.h"
 
-namespace insight {
+namespace insights {
 
 // -------------------------------------------------
 // TrackId
@@ -168,4 +168,4 @@ public:
     ScopeTimer& operator=(ScopeTimer&&)      = delete;
 };
 
-} // namespace insight
+} // namespace insights

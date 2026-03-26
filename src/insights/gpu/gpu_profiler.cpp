@@ -1,6 +1,6 @@
-#include "insight/gpu/gpu_profiler.h"
+#include "insights/gpu/gpu_profiler.h"
 
-namespace insight {
+namespace insights {
 
 void GpuProfiler::Init(std::unique_ptr<IGpuProfilerBackend> backend) {
     backend_ = std::move(backend);
@@ -57,4 +57,4 @@ void GpuProfiler::EndScope(int handle) {
     backend_->EndScope(handle);
 }
 
-} // namespace insight
+} // namespace insights

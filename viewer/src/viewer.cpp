@@ -14,7 +14,7 @@
 
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp);
 
-namespace insight::viewer {
+namespace insights::viewer {
 
 bool Viewer::Init(HWND hwnd) {
     if (!InitDX11(hwnd)) {
@@ -123,7 +123,7 @@ bool Viewer::InitDX11(HWND hwnd) {
 }
 
 bool Viewer::InitServer() {
-    auto& server = insight::Server::GetInstance();
+    auto& server = insights::Server::GetInstance();
     server.SetOnConnected([this]() {
         ctx_.server_state = ServerState::CONNECTED;
     });
@@ -162,7 +162,7 @@ void Viewer::EndFrame() {
 void Viewer::Render() {
     ImGui::SetNextWindowPos(ImVec2(0, 0));
     ImGui::SetNextWindowSize(ImGui::GetIO().DisplaySize);
-    ImGui::Begin("cpp-insight", nullptr,
+    ImGui::Begin("cpp-insights", nullptr,
         ImGuiWindowFlags_NoTitleBar  |
         ImGuiWindowFlags_NoResize    |
         ImGuiWindowFlags_NoMove      |
@@ -228,4 +228,4 @@ LRESULT Viewer::HandleMessage(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
     return DefWindowProc(hwnd, msg, wp, lp);
 }
 
-} // namespace insight::viewer
+} // namespace insightss::viewer

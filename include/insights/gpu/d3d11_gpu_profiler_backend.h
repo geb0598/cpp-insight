@@ -3,9 +3,9 @@
 #include <array>
 #include <d3d11.h>
 
-#include "insight/gpu/gpu_profiler_backend.h"
+#include "insights/gpu/gpu_profiler_backend.h"
 
-namespace insight {
+namespace insights {
 
 // -------------------------------------------------
 // D3D11GpuProfilerBackend
@@ -56,4 +56,4 @@ private:
     UINT64               base_gpu_tick_  = 0;
 };
 
-} // namespace insight
+} // namespace insights

@@ -1,8 +1,8 @@
 #pragma once
 
-#include "insight/server.h"
+#include "insights/server.h"
 
-namespace insight::viewer {
+namespace insights::viewer {
 
 // -------------------------------------------------
 // PanelContext 

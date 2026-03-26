@@ -1,52 +1,52 @@
 // tests/src/test_reporter.cpp
 #include <gtest/gtest.h>
 #include <thread>
-#include "insight/insight.h"
-#include "insight/reporter.h"
+#include "insights/insight.h"
+#include "insights/reporter.h"
 
 namespace {
 
-INSIGHT_DECLARE_STATGROUP("Physics", STATGROUP_PHYSICS);
-INSIGHT_DECLARE_STATGROUP("Rendering", STATGROUP_RENDERING);
-INSIGHT_DECLARE_STAT("Outer", STAT_OUTER, STATGROUP_PHYSICS);
-INSIGHT_DECLARE_STAT("Inner", STAT_INNER, STATGROUP_PHYSICS);
-INSIGHT_DECLARE_STAT("Draw",  STAT_DRAW,  STATGROUP_RENDERING);
+INSIGHTS_DECLARE_STATGROUP("Physics", STATGROUP_PHYSICS);
+INSIGHTS_DECLARE_STATGROUP("Rendering", STATGROUP_RENDERING);
+INSIGHTS_DECLARE_STAT("Outer", STAT_OUTER, STATGROUP_PHYSICS);
+INSIGHTS_DECLARE_STAT("Inner", STAT_INNER, STATGROUP_PHYSICS);
+INSIGHTS_DECLARE_STAT("Draw",  STAT_DRAW,  STATGROUP_RENDERING);
 
 class ReporterTest : public ::testing::Test {
 protected:
     void SetUp() override {
-        insight::ScopeProfiler::GetInstance().Clear();
-        insight::ScopeProfiler::GetInstance().BeginRecording();
-        insight::Reporter::GetInstance().Clear();
+        insights::ScopeProfiler::GetInstance().Clear();
+        insights::ScopeProfiler::GetInstance().BeginRecording();
+        insights::Reporter::GetInstance().Clear();
     }
 };
 
 TEST_F(ReporterTest, SubmitIncreasesSize) {
-    INSIGHT_FRAME_BEGIN();
+    INSIGHTS_FRAME_BEGIN();
     {
-        INSIGHT_SCOPE(STAT_OUTER);
+        INSIGHTS_SCOPE(STAT_OUTER);
     }
-    insight::Reporter::GetInstance().Submit(insight::ScopeProfiler::GetInstance().EndFrame());
+    insights::Reporter::GetInstance().Submit(insights::ScopeProfiler::GetInstance().EndFrame());
 
-    EXPECT_EQ(insight::Reporter::GetInstance().Size(), 1u);
+    EXPECT_EQ(insights::Reporter::GetInstance().Size(), 1u);
 }
 
 TEST_F(ReporterTest, SummarizeByGroupReturnsCorrectGroups) {
     for (int i = 0; i < 5; ++i) {
-        INSIGHT_FRAME_BEGIN();
+        INSIGHTS_FRAME_BEGIN();
         {
-            INSIGHT_SCOPE(STAT_OUTER);
+            INSIGHTS_SCOPE(STAT_OUTER);
             {
-                INSIGHT_SCOPE(STAT_INNER);
+                INSIGHTS_SCOPE(STAT_INNER);
             }
         }
         {
-            INSIGHT_SCOPE(STAT_DRAW);
+            INSIGHTS_SCOPE(STAT_DRAW);
         }
-        insight::Reporter::GetInstance().Submit(insight::ScopeProfiler::GetInstance().EndFrame());
+        insights::Reporter::GetInstance().Submit(insights::ScopeProfiler::GetInstance().EndFrame());
     }
 
-    auto groups = insight::Reporter::GetInstance().SummarizeByGroup(5);
+    auto groups = insights::Reporter::GetInstance().SummarizeByGroup(5);
 
     EXPECT_EQ(groups.size(), 3u);  
 
@@ -55,7 +55,7 @@ TEST_F(ReporterTest, SummarizeByGroupReturnsCorrectGroups) {
             EXPECT_EQ(group.stats.size(), 2u);  
         } else if (group.group_id == STATGROUP_RENDERING.GetId()) {
             EXPECT_EQ(group.stats.size(), 1u);  
-        } else if (group.group_id == insight::Group::FRAME_ID) {
+        } else if (group.group_id == insights::Group::FRAME_ID) {
             EXPECT_EQ(group.stats.size(), 1u);  
         }
     }
@@ -63,14 +63,14 @@ TEST_F(ReporterTest, SummarizeByGroupReturnsCorrectGroups) {
 
 TEST_F(ReporterTest, SummarizeByGroupTimingIsPositive) {
     for (int i = 0; i < 5; ++i) {
-        INSIGHT_FRAME_BEGIN();
+        INSIGHTS_FRAME_BEGIN();
         {
-            INSIGHT_SCOPE(STAT_OUTER);
+            INSIGHTS_SCOPE(STAT_OUTER);
         }
-        insight::Reporter::GetInstance().Submit(insight::ScopeProfiler::GetInstance().EndFrame());
+        insights::Reporter::GetInstance().Submit(insights::ScopeProfiler::GetInstance().EndFrame());
     }
 
-    auto groups = insight::Reporter::GetInstance().SummarizeByGroup(5);
+    auto groups = insights::Reporter::GetInstance().SummarizeByGroup(5);
     ASSERT_FALSE(groups.empty());
 
     for (const auto& group : groups) {
@@ -85,17 +85,17 @@ TEST_F(ReporterTest, SummarizeByGroupTimingIsPositive) {
 
 TEST_F(ReporterTest, SummarizeByStackInclusiveGeExclusive) {
     for (int i = 0; i < 5; ++i) {
-        INSIGHT_FRAME_BEGIN();
+        INSIGHTS_FRAME_BEGIN();
         {
-            INSIGHT_SCOPE(STAT_OUTER);
+            INSIGHTS_SCOPE(STAT_OUTER);
             {
-                INSIGHT_SCOPE(STAT_INNER);
+                INSIGHTS_SCOPE(STAT_INNER);
             }
         }
-        insight::Reporter::GetInstance().Submit(insight::ScopeProfiler::GetInstance().EndFrame());
+        insights::Reporter::GetInstance().Submit(insights::ScopeProfiler::GetInstance().EndFrame());
     }
 
-    auto stacks = insight::Reporter::GetInstance().SummarizeByStack(0, 5);
+    auto stacks = insights::Reporter::GetInstance().SummarizeByStack(0, 5);
     ASSERT_FALSE(stacks.empty());
 
     for (const auto& stack : stacks) {
@@ -110,17 +110,17 @@ TEST_F(ReporterTest, SummarizeByStackInclusiveGeExclusive) {
 
 TEST_F(ReporterTest, SummarizeByStackDepth) {
     for (int i = 0; i < 5; ++i) {
-        INSIGHT_FRAME_BEGIN();
+        INSIGHTS_FRAME_BEGIN();
         {
-            INSIGHT_SCOPE(STAT_OUTER);
+            INSIGHTS_SCOPE(STAT_OUTER);
             {
-                INSIGHT_SCOPE(STAT_INNER);
+                INSIGHTS_SCOPE(STAT_INNER);
             }
         }
-        insight::Reporter::GetInstance().Submit(insight::ScopeProfiler::GetInstance().EndFrame());
+        insights::Reporter::GetInstance().Submit(insights::ScopeProfiler::GetInstance().EndFrame());
     }
 
-    auto stacks = insight::Reporter::GetInstance().SummarizeByStack(0, 5);
+    auto stacks = insights::Reporter::GetInstance().SummarizeByStack(0, 5);
 
     for (const auto& stack : stacks) {
         if (stack.id == STAT_OUTER.GetId()) {

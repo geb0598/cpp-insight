@@ -6,7 +6,7 @@
 #include <type_traits>
 #include <vector>
 
-namespace insight {
+namespace insights {
 
 // -------------------------------------------------
 // Archive 
@@ -115,4 +115,4 @@ private:
     size_t            pos_;
 };
 
-} // namespace insight
+} // namespace insightss

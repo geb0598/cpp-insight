@@ -4,9 +4,9 @@
 #include <filesystem>
 #include <system_error>
 
-#include "insight/archive.h"
+#include "insights/archive.h"
 
-namespace insight {
+namespace insights {
 
 // -------------------------------------------------
 // WindowsBinaryWriter
@@ -18,7 +18,7 @@ public:
     {
         if (!file_) {
             throw std::system_error(errno, std::system_category(),
-                                    "insight::WindowsBinaryWriter: failed to open '" + path.string() + "'");
+                                    "insights::WindowsBinaryWriter: failed to open '" + path.string() + "'");
         }
     }
 
@@ -29,7 +29,7 @@ public:
     void Serialize(void* data, size_t size) override {
         if (fwrite(data, 1, size, file_) != size) {
             throw std::system_error(errno, std::system_category(),
-                                    "insight::WindowsBinaryWriter: fwrite failed");
+                                    "insights::WindowsBinaryWriter: fwrite failed");
         }
     }
 
@@ -54,7 +54,7 @@ public:
     {
         if (!file_) {
             throw std::system_error(errno, std::system_category(),
-                                    "insight::WindowsBinaryReader: failed to open '" + path.string() + "'");
+                                    "insights::WindowsBinaryReader: failed to open '" + path.string() + "'");
         }
     }
 
@@ -67,7 +67,7 @@ public:
     void Serialize(void* data, size_t size) override {
         if (fread(data, 1, size, file_) != size) {
             throw std::system_error(errno, std::system_category(),
-                                    "insight::WindowsBinaryReader: fread failed");
+                                    "insights::WindowsBinaryReader: fread failed");
         }
     }
 
@@ -77,4 +77,4 @@ private:
     FILE* file_ = nullptr;
 };
 
-} // namespace insight
+} // namespace insights

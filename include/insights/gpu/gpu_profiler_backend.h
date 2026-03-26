@@ -2,10 +2,10 @@
 
 #include <vector>
 
-#include "insight/registry.h"
-#include "insight/scope_profiler.h"
+#include "insights/registry.h"
+#include "insights/scope_profiler.h"
 
-namespace insight {
+namespace insights {
 
 // -------------------------------------------------
 // IGpuProfilerBackend
@@ -23,4 +23,4 @@ public:
     virtual std::vector<ScopeRecord> CollectFrame() = 0;
 };
 
-} // namespace insight
+} // namespace insights

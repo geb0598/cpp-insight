@@ -1,11 +1,11 @@
 #include <algorithm>
 #include <atomic>
 
-#include "insight/gpu/d3d11_gpu_profiler_backend.h"
-#include "insight/platform_time.h"
-#include "insight/scope_profiler.h"
+#include "insights/gpu/d3d11_gpu_profiler_backend.h"
+#include "insights/platform_time.h"
+#include "insights/scope_profiler.h"
 
-namespace insight {
+namespace insights {
 
 namespace {
 
@@ -185,4 +185,4 @@ std::vector<ScopeRecord> D3D11GpuProfilerBackend::CollectFrame() {
     return results;
 }
 
-} // namespace insight
+} // namespace insights

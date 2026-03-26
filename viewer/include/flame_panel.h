@@ -1,10 +1,10 @@
 #pragma once
 
-#include "insight/profile_types.h"
+#include "insights/profile_types.h"
 
 #include "panel.h"
 
-namespace insight::viewer {
+namespace insights::viewer {
 
 // -------------------------------------------------
 // Flame Graph Panel
@@ -21,4 +21,4 @@ private:
     size_t       cached_frame_count_ = 0;
 };
 
-} // namespace insight::viewer
+} // namespace insightss::viewer

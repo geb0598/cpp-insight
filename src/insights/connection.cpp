@@ -1,6 +1,6 @@
-#include "insight/connection.h"
+#include "insights/connection.h"
 
-namespace insight {
+namespace insights {
 
 void Connection::StartWorkers() {
     is_running_  = true;
@@ -78,4 +78,4 @@ void Connection::RecvWorker() {
     }
 }
 
-} // namespace insight
+} // namespace insights

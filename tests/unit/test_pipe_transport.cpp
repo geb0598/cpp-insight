@@ -3,8 +3,8 @@
 
 #include <gtest/gtest.h>
 
-#include "insight/archive.h"
-#include "insight/pipe_transport.h"
+#include "insights/archive.h"
+#include "insights/pipe_transport.h"
 
 namespace {
 
@@ -12,9 +12,9 @@ namespace {
 // protected:
 //     void SetUp() override {
 //         server_thread_ = std::thread([this]() {
-//             insight::PipeServer server;
+//             insights::PipeServer server;
 
-//             auto result = server.Listen(insight::DATA_PIPE_NAME, PIPE_ACCESS_INBOUND);
+//             auto result = server.Listen(insights::DATA_PIPE_NAME, PIPE_ACCESS_INBOUND);
 //             if (!result) {
 //                 server_ready_.set_value(false);
 //                 return;
@@ -27,8 +27,8 @@ namespace {
 //                 return;
 //             }
 
-//             insight::PacketHeader header;
-//             insight::ByteBuffer   payload;
+//             insights::PacketHeader header;
+//             insights::ByteBuffer   payload;
 //             result = server.Receive(header, payload);
 //             if (!result) {
 //                 receive_done_.set_value(false);
@@ -52,26 +52,26 @@ namespace {
 //     std::thread          server_thread_;
 //     std::promise<bool>   server_ready_;
 //     std::promise<bool>   receive_done_;
-//     insight::PacketType  received_type_;
-//     insight::ByteBuffer  received_data_;
+//     insights::PacketType  received_type_;
+//     insights::ByteBuffer  received_data_;
 // };
 
 // TEST_F(PipeTransportTest, ConnectAndSendHandshake) {
-//     insight::PipeClient client;
+//     insights::PipeClient client;
 //     auto result = client.Connect();
 //     ASSERT_TRUE(result) << result.error.message();
 
-//     insight::BinaryWriter writer;
+//     insights::BinaryWriter writer;
 //     std::string msg = "hello";
 //     writer << msg;
 
-//     result = client.Send(insight::PacketType::HANDSHAKE, writer.GetBuffer());
+//     result = client.Send(insights::PacketType::HANDSHAKE, writer.GetBuffer());
 //     ASSERT_TRUE(result) << result.error.message();
 
 //     ASSERT_TRUE(receive_done_.get_future().get());
-//     EXPECT_EQ(received_type_, insight::PacketType::HANDSHAKE);
+//     EXPECT_EQ(received_type_, insights::PacketType::HANDSHAKE);
 
-//     insight::BinaryReader reader(received_data_);
+//     insights::BinaryReader reader(received_data_);
 //     std::string received_msg;
 //     reader << received_msg;
 //     EXPECT_EQ(msg, received_msg);

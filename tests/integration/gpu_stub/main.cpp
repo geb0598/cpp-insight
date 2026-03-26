@@ -15,24 +15,24 @@
 #pragma comment(lib, "d3d11.lib")
 #pragma comment(lib, "d3dcompiler.lib")
 
-#include "insight/insight.h"
-#include "insight/gpu/gpu_profiler.h"
-#include "insight/gpu/gpu_profiler_backend.h"
-#include "insight/gpu/d3d11_gpu_profiler_backend.h"
+#include "insights/insight.h"
+#include "insights/gpu/gpu_profiler.h"
+#include "insights/gpu/gpu_profiler_backend.h"
+#include "insights/gpu/d3d11_gpu_profiler_backend.h"
 
-INSIGHT_DECLARE_STATGROUP("Rendering", STATGROUP_RENDERING);
+INSIGHTS_DECLARE_STATGROUP("Rendering", STATGROUP_RENDERING);
 
-INSIGHT_DECLARE_STAT("CPU_MainLoop", STAT_CPU_MAIN,  STATGROUP_RENDERING);
-INSIGHT_DECLARE_STAT("CPU_Render",   STAT_CPU_DRAW,  STATGROUP_RENDERING);
-INSIGHT_DECLARE_STAT("CPU_Present",  STAT_CPU_PRES,  STATGROUP_RENDERING);
+INSIGHTS_DECLARE_STAT("CPU_MainLoop", STAT_CPU_MAIN,  STATGROUP_RENDERING);
+INSIGHTS_DECLARE_STAT("CPU_Render",   STAT_CPU_DRAW,  STATGROUP_RENDERING);
+INSIGHTS_DECLARE_STAT("CPU_Present",  STAT_CPU_PRES,  STATGROUP_RENDERING);
 
-INSIGHT_DECLARE_STAT("GPU_Clear",    STAT_GPU_CLEAR, STATGROUP_RENDERING);
-INSIGHT_DECLARE_STAT("GPU_Present",  STAT_GPU_PRES,  STATGROUP_RENDERING);
+INSIGHTS_DECLARE_STAT("GPU_Clear",    STAT_GPU_CLEAR, STATGROUP_RENDERING);
+INSIGHTS_DECLARE_STAT("GPU_Present",  STAT_GPU_PRES,  STATGROUP_RENDERING);
 
-INSIGHT_DECLARE_STAT("CPU_Triangle", STAT_CPU_TRI,   STATGROUP_RENDERING);
-INSIGHT_DECLARE_STAT("GPU_Triangle", STAT_GPU_TRI,   STATGROUP_RENDERING);
-INSIGHT_DECLARE_STAT("CPU_Cube",     STAT_CPU_CUBE,  STATGROUP_RENDERING);
-INSIGHT_DECLARE_STAT("GPU_Cube",     STAT_GPU_CUBE,  STATGROUP_RENDERING);
+INSIGHTS_DECLARE_STAT("CPU_Triangle", STAT_CPU_TRI,   STATGROUP_RENDERING);
+INSIGHTS_DECLARE_STAT("GPU_Triangle", STAT_GPU_TRI,   STATGROUP_RENDERING);
+INSIGHTS_DECLARE_STAT("CPU_Cube",     STAT_CPU_CUBE,  STATGROUP_RENDERING);
+INSIGHTS_DECLARE_STAT("GPU_Cube",     STAT_GPU_CUBE,  STATGROUP_RENDERING);
 
 static bool g_is_running = true;
 
@@ -215,10 +215,10 @@ int main() {
     ShowWindow(hwnd, SW_SHOWDEFAULT);
     UpdateWindow(hwnd);
 
-    insight::GpuProfiler::GetInstance().Init(
-        std::make_unique<insight::D3D11GpuProfilerBackend>(device.Get(), context.Get()));
+    insights::GpuProfiler::GetInstance().Init(
+        std::make_unique<insights::D3D11GpuProfilerBackend>(device.Get(), context.Get()));
 
-    INSIGHT_INITIALIZE();
+    INSIGHTS_INITIALIZE();
     std::cout << "Insight connected. Running DX11 loop...\n";
 
     DirectX::XMMATRIX proj_matrix = DirectX::XMMatrixPerspectiveFovLH(DirectX::XM_PIDIV4, 1280.0f / 720.0f, 0.01f, 100.0f);
@@ -237,15 +237,15 @@ int main() {
 
         angle += 0.01f;
 
-        INSIGHT_FRAME_BEGIN();
+        INSIGHTS_FRAME_BEGIN();
         {
-            INSIGHT_SCOPE(STAT_CPU_MAIN);
+            INSIGHTS_SCOPE(STAT_CPU_MAIN);
 
             {
-                INSIGHT_SCOPE(STAT_CPU_DRAW);
+                INSIGHTS_SCOPE(STAT_CPU_DRAW);
 
                 {
-                    INSIGHT_GPU_SCOPE(STAT_GPU_CLEAR);
+                    INSIGHTS_GPU_SCOPE(STAT_GPU_CLEAR);
                     const float clear_color[] = { 0.2f, 0.3f, 0.4f, 1.0f };
                     context->OMSetRenderTargets(1, rtv.GetAddressOf(), dsv.Get());
                     context->ClearRenderTargetView(rtv.Get(), clear_color);
@@ -260,8 +260,8 @@ int main() {
                 context->VSSetConstantBuffers(0, 1, cb.GetAddressOf());
 
                 {
-                    INSIGHT_SCOPE(STAT_CPU_TRI);
-                    INSIGHT_GPU_SCOPE(STAT_GPU_TRI);
+                    INSIGHTS_SCOPE(STAT_CPU_TRI);
+                    INSIGHTS_GPU_SCOPE(STAT_GPU_TRI);
 
                     ConstantBuffer cb_data;
                     cb_data.mvp = DirectX::XMMatrixTranspose(
@@ -277,8 +277,8 @@ int main() {
                 }
 
                 {
-                    INSIGHT_SCOPE(STAT_CPU_CUBE);
-                    INSIGHT_GPU_SCOPE(STAT_GPU_CUBE);
+                    INSIGHTS_SCOPE(STAT_CPU_CUBE);
+                    INSIGHTS_GPU_SCOPE(STAT_GPU_CUBE);
 
                     ConstantBuffer cb_data;
                     cb_data.mvp = DirectX::XMMatrixTranspose(
@@ -297,14 +297,14 @@ int main() {
             }
 
             {
-                INSIGHT_SCOPE(STAT_CPU_PRES);
-                INSIGHT_GPU_SCOPE(STAT_GPU_PRES);
+                INSIGHTS_SCOPE(STAT_CPU_PRES);
+                INSIGHTS_GPU_SCOPE(STAT_GPU_PRES);
                 swap_chain->Present(1, 0);
             }
         }
-        INSIGHT_FRAME_END();
+        INSIGHTS_FRAME_END();
     }
 
-    insight::Client::GetInstance().Disconnect();
+    insights::Client::GetInstance().Disconnect();
     return 0;
 }

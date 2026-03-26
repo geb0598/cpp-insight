@@ -1,8 +1,8 @@
-#include "insight/archive.h"
-#include "insight/client.h"
-#include "insight/scope_profiler.h"
+#include "insights/archive.h"
+#include "insights/client.h"
+#include "insights/scope_profiler.h"
 
-namespace insight {
+namespace insights {
 
 void Client::Connect() {
     if (connect_thread_.joinable()) {
@@ -123,4 +123,4 @@ TransportResult Client::SendHandshake() {
     return Send(PacketType::HANDSHAKE, std::move(writer).GetBuffer());
 }
 
-} // namespace insight
+} // namespace insights

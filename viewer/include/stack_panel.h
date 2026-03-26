@@ -2,11 +2,11 @@
 
 #include <vector>
 
-#include "insight/profile_types.h"
+#include "insights/profile_types.h"
 
 #include "panel.h"
 
-namespace insight::viewer {
+namespace insights::viewer {
 
 // -------------------------------------------------
 // Stack Panel
@@ -20,7 +20,7 @@ public:
 
 private:
     struct CachedTrack {
-        std::vector<insight::StackSummary> data;
+        std::vector<insights::StackSummary> data;
         size_t last_begin      = 0;
         size_t last_end        = 0;
         size_t last_track_size = 0;
@@ -36,4 +36,4 @@ private:
     CachedTrack gpu_cache_;
 };
 
-} // namespace insight::viewer
+} // namespace insightss::viewer

@@ -3,10 +3,10 @@
 #include <numeric>
 #include <unordered_map>
 
-#include "insight/reporter.h"
-#include "insight/registry.h"
+#include "insights/reporter.h"
+#include "insights/registry.h"
 
-namespace insight {
+namespace insights {
 
 void Reporter::Submit(FrameRecord frame) {
     if (frame.empty()) {
@@ -320,4 +320,4 @@ TimingSummary Reporter::ComputeTiming(std::vector<double> ms_values) const {
     return timing;
 }
 
-} // namespace insight
+} // namespace insights

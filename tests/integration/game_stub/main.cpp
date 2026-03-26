@@ -5,9 +5,9 @@
 #include <thread>
 #include <vector>
 
-#include "insight/insight.h"
-#include "insight/gpu/gpu_profiler.h"
-#include "insight/gpu/gpu_profiler_backend.h"
+#include "insights/insight.h"
+#include "insights/gpu/gpu_profiler.h"
+#include "insights/gpu/gpu_profiler_backend.h"
 
 void BusyWaitMicroseconds(int micro_sec) {
     auto start = std::chrono::high_resolution_clock::now();
@@ -19,14 +19,14 @@ void BusyWaitMicroseconds(int micro_sec) {
 // -------------------------------------------------
 // MockGpuProfilerBackend
 // -------------------------------------------------
-class MockGpuProfilerBackend : public insight::IGpuProfilerBackend {
+class MockGpuProfilerBackend : public insights::IGpuProfilerBackend {
 public:
     static constexpr int     FRAME_LATENCY         = 3;
     static constexpr int     MAX_SCOPES_PER_FRAME  = 64;
     static constexpr int64_t GPU_LATENCY_NS        = 2'000'000;
 
     struct ScopeEntry {
-        insight::Descriptor::Id id       = insight::Descriptor::INVALID_ID;
+        insights::Descriptor::Id id       = insights::Descriptor::INVALID_ID;
         int                     depth    = 0;
         int64_t                 begin_ns = 0;
         int64_t                 end_ns   = 0;
@@ -64,7 +64,7 @@ public:
         ++frame_num_;
     }
 
-    int BeginScope(const insight::Descriptor& desc) override {
+    int BeginScope(const insights::Descriptor& desc) override {
         auto& slot = slots_[write_idx_];
         if (slot.scope_count >= MAX_SCOPES_PER_FRAME) {
             return -1;
@@ -86,7 +86,7 @@ public:
         slot.scopes[handle].end_ns = NowNs();
     }
 
-    std::vector<insight::ScopeRecord> CollectFrame() override {
+    std::vector<insights::ScopeRecord> CollectFrame() override {
         if (frame_num_ < FRAME_LATENCY) {
             return {};
         }
@@ -97,7 +97,7 @@ public:
 
         int64_t jitter_ns = (std::rand() % 500'000) - 250'000;
 
-        std::vector<insight::ScopeRecord> results;
+        std::vector<insights::ScopeRecord> results;
         results.reserve(slot.scope_count);
         for (int i = 0; i < slot.scope_count; ++i) {
             const auto& e   = slot.scopes[i];
@@ -109,7 +109,7 @@ public:
         }
 
         std::sort(results.begin(), results.end(),
-                  [](const insight::ScopeRecord& a, const insight::ScopeRecord& b) {
+                  [](const insights::ScopeRecord& a, const insights::ScopeRecord& b) {
                       if (a.end_ns != b.end_ns) {
                           return a.end_ns < b.end_ns;
                       }
@@ -122,7 +122,7 @@ public:
 
 private:
     static uint32_t AllocTrackId() {
-        static std::atomic<uint32_t> counter{ insight::TrackId::GPU_BASE };
+        static std::atomic<uint32_t> counter{ insights::TrackId::GPU_BASE };
         return counter.fetch_add(1);
     }
 
@@ -141,79 +141,79 @@ private:
 // -------------------------------------------------
 // Stats
 // -------------------------------------------------
-INSIGHT_DECLARE_STATGROUP("Physics",   STATGROUP_PHYSICS);
-INSIGHT_DECLARE_STATGROUP("Rendering", STATGROUP_RENDERING);
-INSIGHT_DECLARE_STATGROUP("AI",        STATGROUP_AI);
+INSIGHTS_DECLARE_STATGROUP("Physics",   STATGROUP_PHYSICS);
+INSIGHTS_DECLARE_STATGROUP("Rendering", STATGROUP_RENDERING);
+INSIGHTS_DECLARE_STATGROUP("AI",        STATGROUP_AI);
 
-INSIGHT_DECLARE_STAT("PhysicsUpdate", STAT_PHYSICS,   STATGROUP_PHYSICS);
-INSIGHT_DECLARE_STAT("BVHTraverse",   STAT_BVH,       STATGROUP_PHYSICS);
-INSIGHT_DECLARE_STAT("Collision",     STAT_COLLISION, STATGROUP_PHYSICS);
-INSIGHT_DECLARE_STAT("DrawCall",      STAT_DRAW,      STATGROUP_RENDERING);
-INSIGHT_DECLARE_STAT("ShadowPass",    STAT_SHADOW,    STATGROUP_RENDERING);
-INSIGHT_DECLARE_STAT("AIUpdate",      STAT_AI,        STATGROUP_AI);
+INSIGHTS_DECLARE_STAT("PhysicsUpdate", STAT_PHYSICS,   STATGROUP_PHYSICS);
+INSIGHTS_DECLARE_STAT("BVHTraverse",   STAT_BVH,       STATGROUP_PHYSICS);
+INSIGHTS_DECLARE_STAT("Collision",     STAT_COLLISION, STATGROUP_PHYSICS);
+INSIGHTS_DECLARE_STAT("DrawCall",      STAT_DRAW,      STATGROUP_RENDERING);
+INSIGHTS_DECLARE_STAT("ShadowPass",    STAT_SHADOW,    STATGROUP_RENDERING);
+INSIGHTS_DECLARE_STAT("AIUpdate",      STAT_AI,        STATGROUP_AI);
 
-INSIGHT_DECLARE_STAT("GpuShadow",    STAT_GPU_SHADOW, STATGROUP_RENDERING);
-INSIGHT_DECLARE_STAT("GpuOpaque",    STAT_GPU_OPAQUE, STATGROUP_RENDERING);
-INSIGHT_DECLARE_STAT("GpuParticles", STAT_GPU_FX,     STATGROUP_RENDERING);
+INSIGHTS_DECLARE_STAT("GpuShadow",    STAT_GPU_SHADOW, STATGROUP_RENDERING);
+INSIGHTS_DECLARE_STAT("GpuOpaque",    STAT_GPU_OPAQUE, STATGROUP_RENDERING);
+INSIGHTS_DECLARE_STAT("GpuParticles", STAT_GPU_FX,     STATGROUP_RENDERING);
 
 int main() {
     std::cout << "Connecting to viewer...\n";
 
-    insight::GpuProfiler::GetInstance().Init(
+    insights::GpuProfiler::GetInstance().Init(
         std::make_unique<MockGpuProfilerBackend>());
 
-    INSIGHT_INITIALIZE();
+    INSIGHTS_INITIALIZE();
     std::cout << "Connect thread started. Running game loop...\n";
 
     int frame = 0;
     while (true) {
-        INSIGHT_FRAME_BEGIN();
+        INSIGHTS_FRAME_BEGIN();
         {
-            INSIGHT_SCOPE(STAT_PHYSICS);
+            INSIGHTS_SCOPE(STAT_PHYSICS);
             BusyWaitMicroseconds(1800);
             {
-                INSIGHT_SCOPE(STAT_BVH);
+                INSIGHTS_SCOPE(STAT_BVH);
                 BusyWaitMicroseconds(900);
                 {
-                    INSIGHT_SCOPE(STAT_COLLISION);
+                    INSIGHTS_SCOPE(STAT_COLLISION);
                     BusyWaitMicroseconds(400);
                 }
             }
         }
         {
-            INSIGHT_SCOPE(STAT_AI);
+            INSIGHTS_SCOPE(STAT_AI);
             // Edge case: occasional AI spike (variable frame time)
             int sleep_us = (frame % 30 == 0) ? 3000 : 600;
             BusyWaitMicroseconds(sleep_us);
         }
         {
-            INSIGHT_SCOPE(STAT_DRAW);
+            INSIGHTS_SCOPE(STAT_DRAW);
             BusyWaitMicroseconds(2500);
             {
-                INSIGHT_SCOPE(STAT_SHADOW);
+                INSIGHTS_SCOPE(STAT_SHADOW);
                 BusyWaitMicroseconds(800);
             }
 
             {
-                INSIGHT_GPU_SCOPE(STAT_GPU_SHADOW);
+                INSIGHTS_GPU_SCOPE(STAT_GPU_SHADOW);
                 BusyWaitMicroseconds(1200);
             }
             {
-                INSIGHT_GPU_SCOPE(STAT_GPU_OPAQUE);
+                INSIGHTS_GPU_SCOPE(STAT_GPU_OPAQUE);
                 BusyWaitMicroseconds(3500);
                 {
-                    INSIGHT_GPU_SCOPE(STAT_GPU_FX);
+                    INSIGHTS_GPU_SCOPE(STAT_GPU_FX);
                     BusyWaitMicroseconds(600);
                 }
             }
         }
-        INSIGHT_FRAME_END();
+        INSIGHTS_FRAME_END();
 
         // ~60 fps target
         BusyWaitMicroseconds(3000);
         ++frame;
     }
 
-    insight::Client::GetInstance().Disconnect();
+    insights::Client::GetInstance().Disconnect();
     return 0;
 }

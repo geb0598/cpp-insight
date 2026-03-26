@@ -4,9 +4,9 @@
 #include <unordered_map>
 #include <vector>
 
-#include "insight/archive.h"
+#include "insights/archive.h"
 
-namespace insight {
+namespace insights {
 
 // -------------------------------------------------
 // Descriptor
@@ -173,4 +173,4 @@ inline Group::Group(Id id, std::string name)
     Registry::GetInstance().RegisterGroup(this);
 }
 
-} // namespace insight
+} // namespace insights

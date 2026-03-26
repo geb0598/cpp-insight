@@ -4,9 +4,9 @@
 #include <string>
 #include <vector>
 
-#include "insight/registry.h"
+#include "insights/registry.h"
 
-namespace insight {
+namespace insights {
 
 struct TimingSummary {
     double                avg_ms;
@@ -60,4 +60,4 @@ struct FlameSummary {
     std::vector<FlameTrack> tracks;
 };
 
-} // namespace insight
+} // namespace insights

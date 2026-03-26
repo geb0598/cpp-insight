@@ -2,7 +2,7 @@
 
 #include "panel.h"
 
-namespace insight::viewer {
+namespace insights::viewer {
 
 // -------------------------------------------------
 // RealtimePanel 
@@ -16,4 +16,4 @@ public:
     void Render() override;
 };
 
-} // namespace insight::viewer
+} // namespace insightss::viewer

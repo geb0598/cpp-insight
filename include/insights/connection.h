@@ -6,9 +6,9 @@
 #include <queue>
 #include <thread>
 
-#include "insight/transport.h"
+#include "insights/transport.h"
 
-namespace insight {
+namespace insights {
 
 class Connection {
 public:
@@ -73,4 +73,4 @@ private:
     std::function<void()> on_disconnected_;
 };
 
-} // namespace insight
+} // namespace insights

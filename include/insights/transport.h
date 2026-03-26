@@ -9,7 +9,7 @@
 #include <Windows.h>
 #endif
 
-namespace insight {
+namespace insights {
 
 // -------------------------------------------------
 // ITransport
@@ -107,4 +107,4 @@ public:
     virtual TransportResult Receive(PacketHeader& out_header, ByteBuffer& out_payload) = 0;
 };
 
-} // namespace insight
+} // namespace insights

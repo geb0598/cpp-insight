@@ -2,13 +2,13 @@
 
 #include <mutex>
 
-#include "insight/transport.h"
+#include "insights/transport.h"
 
-namespace insight {
+namespace insights {
 
 #if defined(_WIN32)
-constexpr wchar_t DATA_PIPE_NAME[]    = L"\\\\.\\pipe\\cpp-insight-data";
-constexpr wchar_t CONTROL_PIPE_NAME[] = L"\\\\.\\pipe\\cpp-insight-control";
+constexpr wchar_t DATA_PIPE_NAME[]    = L"\\\\.\\pipe\\cpp-insights-data";
+constexpr wchar_t CONTROL_PIPE_NAME[] = L"\\\\.\\pipe\\cpp-insights-control";
 #endif
 
 // -------------------------------------------------
@@ -112,4 +112,4 @@ private:
 };
 
 
-} // namespace insight
+} // namespace insights

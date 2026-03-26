@@ -2,12 +2,12 @@
 #include <ctime>
 #include <filesystem>
 
-#include "insight/archive.h"
-#include "insight/reporter.h"
-#include "insight/server.h"
-#include "insight/windows_archive.h"
+#include "insights/archive.h"
+#include "insights/reporter.h"
+#include "insights/server.h"
+#include "insights/windows_archive.h"
 
-namespace insight {
+namespace insights {
     
 std::filesystem::path Server::GenerateSessionFilename() {
     auto      now    = std::chrono::system_clock::now();
@@ -188,7 +188,7 @@ void Server::SaveSession(const std::filesystem::path& path) {
     std::filesystem::rename(tmp_path, path, ec);
     if (ec) {
         std::filesystem::remove(tmp_path);
-        throw std::system_error(ec, "insight::Server::SaveSession: rename failed");
+        throw std::system_error(ec, "insights::Server::SaveSession: rename failed");
     }
 }
 
@@ -202,11 +202,11 @@ void Server::LoadSession(const std::filesystem::path& path) {
 
     if (magic != FILE_MAGIC) {
         throw std::system_error(std::make_error_code(std::errc::invalid_argument),
-                                "insight::Server::LoadSession: invalid file magic");
+                                "insights::Server::LoadSession: invalid file magic");
     }
     if (version != FILE_VERSION) {
         throw std::system_error(std::make_error_code(std::errc::not_supported),
-                                "insight::Server::LoadSession: unsupported version");
+                                "insights::Server::LoadSession: unsupported version");
     }
 
     Registry::GetInstance().Clear();
@@ -286,4 +286,4 @@ void Server::OnFrame(const ByteBuffer& data) {
     Reporter::GetInstance().Submit(std::move(frame));
 }
 
-} // namespace insight
+} // namespace insights

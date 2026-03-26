@@ -4,7 +4,7 @@
 
 #include "viewer.h"
 
-static insight::viewer::Viewer* g_viewer = nullptr;
+static insights::viewer::Viewer* g_viewer = nullptr;
 
 LRESULT WINAPI WndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
     if (g_viewer) {
@@ -19,17 +19,17 @@ int WINAPI WinMain(HINSTANCE hinstance, HINSTANCE, LPSTR, int) {
     wc.style             = CS_CLASSDC;
     wc.lpfnWndProc       = WndProc;
     wc.hInstance         = hinstance;
-    wc.lpszClassName     = L"cpp-insight-viewer";
+    wc.lpszClassName     = L"cpp-insights-viewer";
     RegisterClassExW(&wc);
 
     HWND hwnd = CreateWindowW(
-        wc.lpszClassName, L"cpp-insight",
+        wc.lpszClassName, L"cpp-insights",
         WS_OVERLAPPEDWINDOW,
         100, 100, 1280, 720,
         nullptr, nullptr,
         hinstance, nullptr);
 
-    insight::viewer::Viewer viewer;
+    insights::viewer::Viewer viewer;
     g_viewer = &viewer;
 
     if (!viewer.Init(hwnd)) {

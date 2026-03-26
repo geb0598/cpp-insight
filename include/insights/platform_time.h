@@ -2,9 +2,9 @@
 
 #include <chrono>
 
-#include "insight/archive.h"
+#include "insights/archive.h"
 
-namespace insight {
+namespace insights {
 
 class PlatformTime {
 public:
@@ -47,4 +47,4 @@ inline Archive& operator<<(Archive& ar, PlatformTime::Duration& duration) {
     return ar;
 }
 
-} // namespace insight
+} // namespace insights

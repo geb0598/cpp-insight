@@ -47,9 +47,9 @@ target_include_directories(implot PUBLIC ${implot_SOURCE_DIR})
 target_link_libraries(implot PUBLIC imgui)
 
 # -----------------------------------------------
-# cpp-insight-viewer
+# cpp-insights-viewer
 # -----------------------------------------------
-add_executable(cpp-insight-viewer WIN32
+add_executable(cpp-insights-viewer WIN32
     src/main.cpp
     src/flame_panel.cpp
     src/realtime_panel.cpp
@@ -59,15 +59,15 @@ add_executable(cpp-insight-viewer WIN32
     src/viewer.cpp
 )
 
-target_include_directories(cpp-insight-viewer
+target_include_directories(cpp-insights-viewer
     PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/include
         ${CMAKE_SOURCE_DIR}/src
 )
 
-target_link_libraries(cpp-insight-viewer
+target_link_libraries(cpp-insights-viewer
     PRIVATE
-        cpp-insight-core
+        cpp-insights-core
         implot
         imgui
 )

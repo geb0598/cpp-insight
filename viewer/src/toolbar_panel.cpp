@@ -4,11 +4,11 @@
 
 #include <imgui.h>
 
-#include "insight/reporter.h"
+#include "insights/reporter.h"
 
 #include "toolbar_panel.h"
 
-namespace insight::viewer {
+namespace insights::viewer {
 
 void ToolbarPanel::Render() {
     auto& server  = Server::GetInstance();
@@ -114,7 +114,7 @@ void ToolbarPanel::Render() {
             if (ImGui::Button("Stop Recording")) {
                 server.StopRecording();
                 context.server_state = ServerState::CONNECTED;
-                context.timeline_end = insight::Reporter::GetInstance().Size();
+                context.timeline_end = insights::Reporter::GetInstance().Size();
             }
             ImGui::SameLine();
             ImGui::TextColored(ImVec4(1.0f, 0.2f, 0.2f, 1.0f), "Recording...");
@@ -128,4 +128,4 @@ void ToolbarPanel::Render() {
     }
 }
 
-} // namespace insight::viewer
+} // namespace insightss::viewer

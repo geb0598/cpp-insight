@@ -7,14 +7,14 @@
 #include <imgui.h>
 #include <implot.h>
 
-#include "insight/platform_time.h"
-#include "insight/reporter.h"
-#include "insight/registry.h"
-#include "insight/scope_profiler.h"
+#include "insights/platform_time.h"
+#include "insights/reporter.h"
+#include "insights/registry.h"
+#include "insights/scope_profiler.h"
 
 #include "flame_panel.h"
 
-namespace insight::viewer {
+namespace insights::viewer {
 
 namespace {
 
@@ -159,4 +159,4 @@ void FlamePanel::Reset() {
     cached_frame_count_ = 0;
 }
 
-} // namespace insight::viewer
+} // namespace insightss::viewer

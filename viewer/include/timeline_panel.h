@@ -4,7 +4,7 @@
 
 #include "panel.h"
 
-namespace insight::viewer {
+namespace insights::viewer {
 
 // -------------------------------------------------
 // Timeline Panel
@@ -20,4 +20,4 @@ private:
     bool reset_view_ = true;
 };
 
-} // namespace insight::viewer
+} // namespace insightss::viewer

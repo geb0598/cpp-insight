@@ -2,9 +2,9 @@
 #include <cstring>
 #include <vector>
 
-#include "insight/pipe_transport.h"
+#include "insights/pipe_transport.h"
 
-namespace insight {
+namespace insights {
 
 #if defined(_WIN32)
 
@@ -190,4 +190,4 @@ void PipeServer::CleanUp() {
 
 #endif // _WIN32
 
-} // namespace insight
+} // namespace insights

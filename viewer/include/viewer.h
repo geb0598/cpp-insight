@@ -6,11 +6,11 @@
 #include <d3d11.h>
 #include <wrl/client.h>
 
-#include "insight/server.h"
+#include "insights/server.h"
 
 #include "panel.h"
 
-namespace insight::viewer {
+namespace insights::viewer {
 
 class Viewer {
 public:
@@ -50,4 +50,4 @@ private:
     bool is_running_ = false;
 };
 
-} // namespace insight::viewer
+} // namespace insightss::viewer

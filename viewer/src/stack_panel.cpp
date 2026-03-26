@@ -3,13 +3,13 @@
 
 #include <imgui.h>
 
-#include "insight/reporter.h"
-#include "insight/registry.h"
-#include "insight/scope_profiler.h"
+#include "insights/reporter.h"
+#include "insights/registry.h"
+#include "insights/scope_profiler.h"
 
 #include "stack_panel.h"
 
-namespace insight::viewer {
+namespace insights::viewer {
 
 namespace {
 
@@ -167,4 +167,4 @@ void StackPanel::DrawNode(const StackSummary* node,
     }
 }
 
-} // namespace insight::viewer
+} // namespace insightss::viewer

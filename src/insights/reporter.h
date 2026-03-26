@@ -5,10 +5,10 @@
 #include <unordered_map>
 #include <vector>
 
-#include "insight/profile_types.h"
-#include "insight/scope_profiler.h"
+#include "insights/profile_types.h"
+#include "insights/scope_profiler.h"
 
-namespace insight {
+namespace insights {
 
 using SharedFrame = std::shared_ptr<const FrameRecord>;
 
@@ -51,4 +51,4 @@ private:
     mutable std::mutex                                     mutex_;
 };
 
-} // namespace insight
+} // namespace insights

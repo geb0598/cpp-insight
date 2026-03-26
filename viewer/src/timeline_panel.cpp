@@ -2,12 +2,12 @@
 #include <imgui.h>
 #include <implot.h>
 
-#include "insight/reporter.h"
-#include "insight/scope_profiler.h"
+#include "insights/reporter.h"
+#include "insights/scope_profiler.h"
 
 #include "timeline_panel.h"
 
-namespace insight::viewer {
+namespace insights::viewer {
 
 namespace {
     ImVec4 GetColorFromId(Descriptor::Id id) {
@@ -162,4 +162,4 @@ void TimelinePanel::Reset() {
     reset_view_ = true;
 }
 
-} // namespace insight::viewer
+} // namespace insightss::viewer

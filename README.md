@@ -1,1 +1,1 @@
-# cpp-insight
+# cpp-insights

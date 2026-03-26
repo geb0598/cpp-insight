@@ -1,11 +1,11 @@
 #include <imgui.h>
 
-#include "insight/registry.h"
-#include "insight/reporter.h"
+#include "insights/registry.h"
+#include "insights/reporter.h"
 
 #include "realtime_panel.h"
 
-namespace insight::viewer {
+namespace insights::viewer {
 
 void RealtimePanel::Render() {
     auto& reporter = Reporter::GetInstance();
@@ -56,4 +56,4 @@ void RealtimePanel::Render() {
     ImGui::EndChild();
 }
 
-} // namespace insight::viewer
+} // namespace insightss::viewer

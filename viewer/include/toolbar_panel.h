@@ -3,9 +3,9 @@
 #include <string>
 
 #include "panel.h"
-#include "insight/server.h"
+#include "insights/server.h"
 
-namespace insight::viewer {
+namespace insights::viewer {
 
 // -------------------------------------------------
 // ToolbarPanel
@@ -20,4 +20,4 @@ private:
     std::string status_message_;
 };
 
-} // namespace insight::viewer
+} // namespace insightss::viewer

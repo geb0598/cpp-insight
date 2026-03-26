@@ -4,11 +4,11 @@ add_executable(gpu-stub
 
 target_link_libraries(gpu-stub
     PRIVATE
-        cpp-insight-core
-        cpp-insight-gpu
+        cpp-insights-core
+        cpp-insights-gpu
 )
 
 target_compile_definitions(gpu-stub
     PRIVATE
-        INSIGHT_GPU
+        INSIGHTS_GPU
 )

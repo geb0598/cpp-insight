@@ -3,10 +3,10 @@
 #include <atomic>
 #include <memory>
 
-#include "insight/gpu/gpu_profiler_backend.h"
-#include "insight/scope_profiler.h"
+#include "insights/gpu/gpu_profiler_backend.h"
+#include "insights/scope_profiler.h"
 
-namespace insight {
+namespace insights {
 
 // -------------------------------------------------
 // GpuProfiler
@@ -66,4 +66,4 @@ private:
     int handle_ = -1;
 };
 
-} // namespace insight
+} // namespace insights

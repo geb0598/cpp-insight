@@ -7,12 +7,12 @@
 #include <queue>
 #include <thread>
 
-#include "insight/connection.h"
-#include "insight/pipe_transport.h"
-#include "insight/scope_profiler.h"
-#include "insight/registry.h"
+#include "insights/connection.h"
+#include "insights/pipe_transport.h"
+#include "insights/scope_profiler.h"
+#include "insights/registry.h"
 
-namespace insight {
+namespace insights {
 
 // -------------------------------------------------
 // ClientState
@@ -70,4 +70,4 @@ private:
     std::atomic<ClientState> state_ = ClientState::DISCONNECTED;
 };
 
-} // namespace insight
+} // namespace insightss

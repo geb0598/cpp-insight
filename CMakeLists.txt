@@ -1,67 +1,67 @@
 cmake_minimum_required(VERSION 3.16)
-project(cpp-insight VERSION 1.0.0 LANGUAGES CXX)
+project(cpp-insights VERSION 1.0.0 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 # -----------------------------------------------
-# cpp-insight-core (header only)
+# cpp-insights-core (header only)
 # -----------------------------------------------
-add_library(cpp-insight-core
+add_library(cpp-insights-core
     STATIC
-        src/insight/client.cpp
-        src/insight/connection.cpp
-        src/insight/pipe_transport.cpp
-        src/insight/reporter.cpp
-        src/insight/server.cpp
+        src/insights/client.cpp
+        src/insights/connection.cpp
+        src/insights/pipe_transport.cpp
+        src/insights/reporter.cpp
+        src/insights/server.cpp
 )
 
-target_include_directories(cpp-insight-core
+target_include_directories(cpp-insights-core
     PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}/include
     PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/src
 )
 
-target_compile_features(cpp-insight-core PUBLIC cxx_std_17)
+target_compile_features(cpp-insights-core PUBLIC cxx_std_17)
 
 # -----------------------------------------------
-# cpp-insight-gpu (static library)
+# cpp-insights-gpu (static library)
 # -----------------------------------------------
 if (WIN32)
-    add_library(cpp-insight-gpu STATIC
-        src/insight/gpu/gpu_profiler.cpp
-        src/insight/gpu/d3d11_gpu_profiler_backend.cpp
+    add_library(cpp-insights-gpu STATIC
+        src/insights/gpu/gpu_profiler.cpp
+        src/insights/gpu/d3d11_gpu_profiler_backend.cpp
     )
 
-    target_include_directories(cpp-insight-gpu
+    target_include_directories(cpp-insights-gpu
         PUBLIC
             ${CMAKE_CURRENT_SOURCE_DIR}/include
     )
 
-    target_link_libraries(cpp-insight-gpu
-        PUBLIC cpp-insight-core
+    target_link_libraries(cpp-insights-gpu
+        PUBLIC cpp-insights-core
         PRIVATE d3d11
     )
 else()
-    message(STATUS "cpp-insight-gpu: Windows only, skipping on this platform")
+    message(STATUS "cpp-insights-gpu: Windows only, skipping on this platform")
 endif()
 
 # -----------------------------------------------
-# cpp-insight-viewer 
+# cpp-insights-viewer 
 # -----------------------------------------------
 
-option(INSIGHT_BUILD_VIEWER "Build viewer" ON)
-if(INSIGHT_BUILD_VIEWER)
+option(INSIGHTS_BUILD_VIEWER "Build viewer" ON)
+if(INSIGHTS_BUILD_VIEWER)
     add_subdirectory(viewer)
 endif()
 
 # -----------------------------------------------
 # Tests
 # -----------------------------------------------
-option(INSIGHT_BUILD_TESTS "Build tests" OFF)
-if(INSIGHT_BUILD_TESTS)
+option(INSIGHTS_BUILD_TESTS "Build tests" OFF)
+if(INSIGHTS_BUILD_TESTS)
     include(FetchContent)
     FetchContent_Declare(
         googletest
@@ -84,18 +84,18 @@ if(INSIGHT_BUILD_TESTS)
         tests/unit/test_scope_profiler.cpp
     )
 
-    add_executable(insight-test ${TEST_SOURCES})
+    add_executable(insights-test ${TEST_SOURCES})
 
-    target_include_directories(insight-test PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src)
+    target_include_directories(insights-test PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src)
 
-    target_link_libraries(insight-test
+    target_link_libraries(insights-test
         PRIVATE
-            cpp-insight-core
+            cpp-insights-core
             GTest::gtest_main
     )
 
     include(GoogleTest)
-    gtest_discover_tests(insight-test)
+    gtest_discover_tests(insights-test)
 
     add_subdirectory(tests/integration/game_stub)
     add_subdirectory(tests/integration/gpu_stub)
