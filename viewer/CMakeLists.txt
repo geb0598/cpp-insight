@@ -57,6 +57,7 @@ add_executable(cpp-insights-viewer WIN32
     src/timeline_panel.cpp
     src/toolbar_panel.cpp
     src/viewer.cpp
+    data/cpp-insights.rc
 )
 
 target_include_directories(cpp-insights-viewer
