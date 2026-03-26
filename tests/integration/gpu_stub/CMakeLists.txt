@@ -1,14 +1,14 @@
-add_executable(game-stub
+add_executable(gpu-stub
     main.cpp
 )
 
-target_link_libraries(game-stub
+target_link_libraries(gpu-stub
     PRIVATE
         cpp-insight-core
         cpp-insight-gpu
 )
 
-target_compile_definitions(game-stub
+target_compile_definitions(gpu-stub
     PRIVATE
         INSIGHT_GPU
 )

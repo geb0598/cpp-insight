@@ -1,34 +1,91 @@
-﻿#include <algorithm>
+﻿#define NOMINMAX
+#include <algorithm>
 
 #include <imgui.h>
 
 #include "insight/reporter.h"
 #include "insight/registry.h"
+#include "insight/scope_profiler.h"
 
 #include "stack_panel.h"
 
 namespace insight::viewer {
 
+namespace {
+
+static const ImGuiTableFlags TABLE_FLAGS =
+    ImGuiTableFlags_BordersV | ImGuiTableFlags_BordersOuterH |
+    ImGuiTableFlags_RowBg    | ImGuiTableFlags_Resizable     |
+    ImGuiTableFlags_NoBordersInBody;
+
+} // namespace
+
 void StackPanel::Render() {
-auto& context  = GetContext();
+    auto& context  = GetContext();
     auto& reporter = Reporter::GetInstance();
 
-    if (context.timeline_begin != last_begin_ || context.timeline_end != last_end_) {
-        if (context.timeline_begin <= context.timeline_end) {
-            cached_ = reporter.SummarizeByStack(context.timeline_begin, context.timeline_end + 1);
-        }
-        last_begin_ = context.timeline_begin;
-        last_end_   = context.timeline_end;
-    }
+    size_t cpu_size = reporter.Size(TrackId::CPU_BASE);
+    size_t gpu_size = reporter.Size(TrackId::GPU_BASE);
+
+    size_t cpu_begin = context.timeline_begin;
+    size_t cpu_end   = context.timeline_end + 1;
+
+    // Use raw timeline values — SummarizeByStack clamps internally.
+    // Clamping here caused gpu_end to always equal gpu_size when the
+    // selection extends past the available GPU frame count, so the
+    // GPU tab never updated when the user moved the right marker.
+    size_t gpu_begin = context.timeline_begin;
+    size_t gpu_end   = context.timeline_end + 1;
 
     ImGui::BeginChild("Stack", ImVec2(0, 0), true);
-    ImGui::Text("Selected Range Details (Frame %zu ~ %zu)", context.timeline_begin, context.timeline_end);
-    ImGui::Separator();
+
+    if (ImGui::BeginTabBar("StackTabs")) {
+
+        if (ImGui::BeginTabItem("CPU")) {
+            ImGui::Text("Frame %zu ~ %zu", context.timeline_begin, context.timeline_end);
+            ImGui::Separator();
+            DrawTrackSection(TrackId::CPU_BASE, cpu_begin, cpu_end, cpu_cache_, "CpuStackTable");
+            ImGui::EndTabItem();
+        }
+
+        if (reporter.HasTrack(TrackId::GPU_BASE)) {
+            if (ImGui::BeginTabItem("GPU")) {
+                ImGui::Text("Frame %zu ~ %zu  (%zu GPU frames total)",
+                            gpu_begin, gpu_end > 0 ? gpu_end - 1 : 0, gpu_size);
+                ImGui::Separator();
+                DrawTrackSection(TrackId::GPU_BASE, gpu_begin, gpu_end, gpu_cache_, "GpuStackTable");
+                ImGui::EndTabItem();
+            }
+        }
+
+        ImGui::EndTabBar();
+    }
+
+    ImGui::EndChild();
+}
+
+void StackPanel::DrawTrackSection(uint32_t track_id, size_t begin, size_t end,
+                                  CachedTrack& cache, const char* table_id) {
+    auto& reporter   = Reporter::GetInstance();
+    size_t track_size = reporter.Size(track_id);
+
+    if (begin != cache.last_begin     ||
+        end   != cache.last_end       ||
+        track_size != cache.last_track_size) {
+        if (begin < end) {
+            cache.data = reporter.SummarizeByStack(begin, end, track_id);
+        } else {
+            cache.data.clear();
+        }
+        cache.last_begin      = begin;
+        cache.last_end        = end;
+        cache.last_track_size = track_size;
+    }
 
     std::unordered_map<Descriptor::Id, std::vector<const StackSummary*>> tree;
     std::vector<const StackSummary*> roots;
 
-    for (const auto& item : cached_) {
+    for (const auto& item : cache.data) {
         if (item.parent_id == Descriptor::INVALID_ID) {
             roots.push_back(&item);
         } else {
@@ -44,34 +101,26 @@ auto& context  = GetContext();
         std::sort(children.begin(), children.end(), sort_desc);
     }
 
-    static ImGuiTableFlags flags = ImGuiTableFlags_BordersV | ImGuiTableFlags_BordersOuterH | 
-                                   ImGuiTableFlags_RowBg | ImGuiTableFlags_Resizable | ImGuiTableFlags_NoBordersInBody;
-
-    if (ImGui::BeginTable("StackTable", 5, flags)) {
+    if (ImGui::BeginTable(table_id, 5, TABLE_FLAGS)) {
         ImGui::TableSetupColumn("Function / Scope", ImGuiTableColumnFlags_WidthStretch);
-        ImGui::TableSetupColumn("Count", ImGuiTableColumnFlags_WidthFixed, 50.0f); 
-        ImGui::TableSetupColumn("Incl. Avg (ms)", ImGuiTableColumnFlags_WidthFixed, 100.0f);
-        ImGui::TableSetupColumn("Excl. Avg (ms)", ImGuiTableColumnFlags_WidthFixed, 100.0f);
-        ImGui::TableSetupColumn("Incl. Max (ms)", ImGuiTableColumnFlags_WidthFixed, 100.0f);
+        ImGui::TableSetupColumn("Count",            ImGuiTableColumnFlags_WidthFixed, 50.0f);
+        ImGui::TableSetupColumn("Incl. Avg (ms)",  ImGuiTableColumnFlags_WidthFixed, 100.0f);
+        ImGui::TableSetupColumn("Excl. Avg (ms)",  ImGuiTableColumnFlags_WidthFixed, 100.0f);
+        ImGui::TableSetupColumn("Incl. Max (ms)",  ImGuiTableColumnFlags_WidthFixed, 100.0f);
         ImGui::TableHeadersRow();
-
         for (const auto* root : roots) {
             DrawNode(root, tree);
         }
-
         ImGui::EndTable();
     }
-
-    ImGui::EndChild();
 }
 
 void StackPanel::Reset() {
-    cached_.clear();
-    last_begin_ = 0;
-    last_end_   = 0;
+    cpu_cache_ = {};
+    gpu_cache_ = {};
 }
 
-void StackPanel::DrawNode(const StackSummary* node, 
+void StackPanel::DrawNode(const StackSummary* node,
                           const std::unordered_map<Descriptor::Id, std::vector<const StackSummary*>>& tree) {
     auto& registry = Registry::GetInstance();
 
@@ -80,7 +129,7 @@ void StackPanel::DrawNode(const StackSummary* node,
         return;
     }
 
-ImGui::TableNextRow();
+    ImGui::TableNextRow();
     ImGui::TableNextColumn();
 
     auto it = tree.find(node->id);
@@ -88,10 +137,10 @@ ImGui::TableNextRow();
 
     ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_SpanFullWidth;
     if (!has_children) {
-        flags |= ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_Bullet; 
+        flags |= ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_Bullet;
     }
-    if (node->depth < 2) { 
-        flags |= ImGuiTreeNodeFlags_DefaultOpen; 
+    if (node->depth < 2) {
+        flags |= ImGuiTreeNodeFlags_DefaultOpen;
     }
 
     bool is_open = ImGui::TreeNodeEx(d->GetName().c_str(), flags);
@@ -101,10 +150,10 @@ ImGui::TableNextRow();
 
     ImGui::TableNextColumn();
     ImGui::Text("%.3f", node->inclusive.avg_ms);
-    
+
     ImGui::TableNextColumn();
-    ImGui::TextColored(ImVec4(0.7f, 0.7f, 1.0f, 1.0f), "%.3f", node->exclusive.avg_ms); 
-    
+    ImGui::TextColored(ImVec4(0.7f, 0.7f, 1.0f, 1.0f), "%.3f", node->exclusive.avg_ms);
+
     ImGui::TableNextColumn();
     ImGui::TextColored(ImVec4(1.0f, 0.6f, 0.6f, 1.0f), "%.3f", node->inclusive.max_ms);
 
@@ -114,7 +163,7 @@ ImGui::TableNextRow();
                 DrawNode(child, tree);
             }
         }
-        ImGui::TreePop(); 
+        ImGui::TreePop();
     }
 }
 

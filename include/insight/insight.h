@@ -5,7 +5,7 @@
 #include "insight/scope_profiler.h"
 #include "insight/registry.h"
 
-// GPU (opt-in via INSIGHT_GPU define)
+// GPU 
 #if defined(INSIGHT_GPU)
 #include "insight/gpu/gpu_profiler.h"
 #endif
@@ -71,15 +71,15 @@
 
 #define INSIGHT_FRAME_BEGIN() \
     do { \
-        insight::ScopeProfiler::GetInstance().BeginFrame(); \
         INSIGHT_GPU_IMPL_FRAME_BEGIN() \
+        insight::ScopeProfiler::GetInstance().BeginFrame(); \
     } while(0)
 
 #define INSIGHT_FRAME_END() \
     do { \
         insight::Client::GetInstance().SendFrame( \
             insight::ScopeProfiler::GetInstance().EndFrame()); \
-        INSIGHT_GPU_IMPL_FRAME_END() \
+        INSIGHT_GPU_IMPL_FRAME_END(); \
     } while(0)
 
 // -------------------------------------------------

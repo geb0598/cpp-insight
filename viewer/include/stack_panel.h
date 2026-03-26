@@ -19,12 +19,21 @@ public:
     void Reset()  override;
 
 private:
-    void DrawNode(const StackSummary* node, 
+    struct CachedTrack {
+        std::vector<insight::StackSummary> data;
+        size_t last_begin      = 0;
+        size_t last_end        = 0;
+        size_t last_track_size = 0;
+    };
+
+    void DrawNode(const StackSummary* node,
                   const std::unordered_map<Descriptor::Id, std::vector<const StackSummary*>>& tree);
 
-    std::vector<insight::StackSummary> cached_;
-    size_t                             last_begin_ = 0;
-    size_t                             last_end_ = 0;
+    void DrawTrackSection(uint32_t track_id, size_t begin, size_t end,
+                          CachedTrack& cache, const char* table_id);
+
+    CachedTrack cpu_cache_;
+    CachedTrack gpu_cache_;
 };
 
 } // namespace insight::viewer

@@ -30,6 +30,7 @@ public:
     void   Submit(FrameRecord frame);
     void   Clear();
     size_t Size(uint32_t track_id = 0) const;
+    size_t TotalSize() const;
 
     std::vector<GroupSummary>  SummarizeByGroup(size_t count,             uint32_t track_id = 0) const;
     std::vector<StackSummary>  SummarizeByStack(size_t begin, size_t end, uint32_t track_id = 0) const;

@@ -62,7 +62,7 @@ public:
     }
 
     void BeginRecording() {
-        recording_start_      = PlatformTime::Now();
+        first_frame_pending_  = true;
         is_recording_started_ = true;
         if (on_begin_recording_) {
             on_begin_recording_();
@@ -70,6 +70,7 @@ public:
     }
 
     void EndRecording() {
+        first_frame_pending_  = false;
         is_recording_started_ = false;
         is_frame_started_     = false;
         stack_.clear();
@@ -85,6 +86,10 @@ public:
     void BeginFrame() {
         frame_.clear();
         if (is_recording_started_) {
+            if (first_frame_pending_) {
+                recording_start_     = PlatformTime::Now();
+                first_frame_pending_ = false;
+            }
             is_frame_started_ = true;
             BeginScope(Descriptor::GetFrameDescriptor());
         }
@@ -135,6 +140,7 @@ private:
     std::vector<StackEntry> stack_;
     FrameRecord             frame_;
 
+    bool                    first_frame_pending_  = false;
     bool                    is_recording_started_ = false;
     bool                    is_frame_started_     = false;
     PlatformTime::TimePoint recording_start_;

@@ -80,7 +80,7 @@ void DrawTrack(const FlameTrack& track, int y_base, ImDrawList* dl) {
 void FlamePanel::Render() {
     auto& reporter = Reporter::GetInstance();
  
-    size_t current_count = reporter.Size();
+    size_t current_count = reporter.TotalSize();
     if (current_count != cached_frame_count_) {
         cached_summary_     = reporter.GetFlameSummary();
         cached_frame_count_ = current_count;

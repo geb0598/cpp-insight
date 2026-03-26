@@ -10,6 +10,7 @@ namespace insight {
 
 void UniquePipeHandle::Reset(HandleType handle) {
     if (handle_ != INVALID_HANDLE) {
+        CancelIoEx(handle_, nullptr);
         CloseHandle(handle_);
     }
     handle_ = handle;
@@ -135,6 +136,8 @@ TransportResult PipeServer::Receive(PacketHeader& out_header, ByteBuffer& out_pa
 }
 
 TransportResult PipeServer::Listen(const wchar_t* pipe_name, DWORD access) {
+    std::lock_guard<std::mutex> lock(mutex_);
+
     handle_.Reset(CreateNamedPipeW(
         pipe_name,
         access,
@@ -150,7 +153,13 @@ TransportResult PipeServer::Listen(const wchar_t* pipe_name, DWORD access) {
 }
 
 TransportResult PipeServer::Accept() {
-    if (!IsConnected()) {
+    UniquePipeHandle::HandleType handle = UniquePipeHandle::INVALID_HANDLE;
+    {
+        std::lock_guard<std::mutex> lock(mutex_);
+        handle = handle_.Get();
+    }
+
+    if (handle == UniquePipeHandle::INVALID_HANDLE) {
         return TransportResult::NotConnected();
     }
 
@@ -166,7 +175,10 @@ TransportResult PipeServer::Accept() {
 }
 
 void PipeServer::CleanUp() {
+    std::lock_guard<std::mutex> lock(mutex_);
+
     if (handle_.IsValid()) {
+        CancelIoEx(handle_.Get(), nullptr);
         DisconnectNamedPipe(handle_.Get());
         handle_.Reset();
     }

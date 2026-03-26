@@ -36,6 +36,15 @@ std::vector<SharedFrame> Reporter::GetTrack(uint32_t track_id) const {
     return it->second;
 }
 
+size_t Reporter::TotalSize() const {
+    std::lock_guard<std::mutex> lock(mutex_);
+    size_t total = 0;
+    for (const auto& [id, frames] : tracks_) {
+        total += frames.size();
+    }
+    return total;
+}
+
 bool Reporter::HasTrack(uint32_t track_id) const {
     std::lock_guard<std::mutex> lock(mutex_);
     return tracks_.find(track_id) != tracks_.end();
@@ -247,7 +256,11 @@ FlameSummary Reporter::GetFlameSummary() const {
             for (const auto& record : *frame) {
                 auto& track = track_map[record.track_id];
                 if (track.scopes.empty()) {
-                    track.label     = "Thread #" + std::to_string(record.track_id);
+                    if (record.track_id >= TrackId::GPU_BASE) {
+                        track.label = "GPU #" + std::to_string(record.track_id - TrackId::GPU_BASE);
+                    } else {
+                        track.label = "CPU #" + std::to_string(record.track_id);
+                    }
                     track.track_id  = record.track_id;
                     track.max_depth = 0;
                 }

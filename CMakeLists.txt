@@ -98,4 +98,5 @@ if(INSIGHT_BUILD_TESTS)
     gtest_discover_tests(insight-test)
 
     add_subdirectory(tests/integration/game_stub)
+    add_subdirectory(tests/integration/gpu_stub)
 endif()

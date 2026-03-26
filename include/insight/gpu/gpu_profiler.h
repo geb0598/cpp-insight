@@ -1,5 +1,6 @@
 #pragma once
 
+#include <atomic>
 #include <memory>
 
 #include "insight/gpu/gpu_profiler_backend.h"
@@ -38,8 +39,9 @@ private:
     ~GpuProfiler() = default;
 
     std::unique_ptr<IGpuProfilerBackend> backend_;
-    bool is_recording_     = false;
-    bool is_frame_started_ = false;
+    bool                  is_recording_            = false;
+    bool                  is_frame_started_        = false;
+    std::atomic<bool>     pending_begin_recording_ = false;
 };
 
 // -------------------------------------------------

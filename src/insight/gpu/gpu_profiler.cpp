@@ -1,5 +1,4 @@
 #include "insight/gpu/gpu_profiler.h"
-#include "insight/platform_time.h"
 
 namespace insight {
 
@@ -13,10 +12,11 @@ void GpuProfiler::BeginRecording() {
     }
     is_recording_     = true;
     is_frame_started_ = false;
-    backend_->BeginRecording();
+    pending_begin_recording_.store(true, std::memory_order_release);
 }
 
 void GpuProfiler::EndRecording() {
+    pending_begin_recording_.store(false, std::memory_order_relaxed);
     is_recording_     = false;
     is_frame_started_ = false;
 }
@@ -25,11 +25,12 @@ void GpuProfiler::BeginFrame() {
     if (!is_recording_ || !backend_) {
         return;
     }
+    if (pending_begin_recording_.load(std::memory_order_acquire)) {
+        pending_begin_recording_.store(false, std::memory_order_relaxed);
+        backend_->BeginRecording();
+    }
     is_frame_started_ = true;
-
-    auto    recording_start = ScopeProfiler::GetInstance().GetRecordingStart();
-    int64_t cpu_ref_ns      = PlatformTime::Elapsed(recording_start, PlatformTime::Now()).count();
-    backend_->BeginFrame(cpu_ref_ns);
+    backend_->BeginFrame();
 }
 
 FrameRecord GpuProfiler::EndFrame() {

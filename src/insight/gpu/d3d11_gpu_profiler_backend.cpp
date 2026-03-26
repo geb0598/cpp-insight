@@ -2,6 +2,8 @@
 #include <atomic>
 
 #include "insight/gpu/d3d11_gpu_profiler_backend.h"
+#include "insight/platform_time.h"
+#include "insight/scope_profiler.h"
 
 namespace insight {
 
@@ -21,8 +23,7 @@ D3D11GpuProfilerBackend::D3D11GpuProfilerBackend(ID3D11Device* device, ID3D11Dev
     D3D11_QUERY_DESC timestamp_desc = { D3D11_QUERY_TIMESTAMP,          0 };
 
     for (auto& slot : slots_) {
-        device_->CreateQuery(&disjoint_desc,  &slot.disjoint_q);
-        device_->CreateQuery(&timestamp_desc, &slot.frame_start_q);
+        device_->CreateQuery(&disjoint_desc, &slot.disjoint_q);
         for (auto& scope : slot.scopes) {
             device_->CreateQuery(&timestamp_desc, &scope.begin_q);
             device_->CreateQuery(&timestamp_desc, &scope.end_q);
@@ -35,16 +36,9 @@ D3D11GpuProfilerBackend::~D3D11GpuProfilerBackend() {
         if (slot.disjoint_q) {
             slot.disjoint_q->Release();
         }
-        if (slot.frame_start_q) {
-            slot.frame_start_q->Release();
-        }
         for (auto& scope : slot.scopes) {
-            if (scope.begin_q) {
-                scope.begin_q->Release();
-            }
-            if (scope.end_q) {
-                scope.end_q->Release();
-            }
+            if (scope.begin_q) { scope.begin_q->Release(); }
+            if (scope.end_q)   { scope.end_q->Release();   }
         }
     }
 }
@@ -57,17 +51,60 @@ void D3D11GpuProfilerBackend::BeginRecording() {
         slot.scope_count = 0;
         slot.scope_depth = 0;
     }
+
+    ID3D11Query* calib_q = nullptr;
+    ID3D11Query* disj_q  = nullptr;
+    D3D11_QUERY_DESC td  = { D3D11_QUERY_TIMESTAMP,          0 };
+    D3D11_QUERY_DESC dd  = { D3D11_QUERY_TIMESTAMP_DISJOINT, 0 };
+    if (FAILED(device_->CreateQuery(&td, &calib_q))) { return; }
+    if (FAILED(device_->CreateQuery(&dd, &disj_q))) {
+        calib_q->Release();
+        return;
+    }
+
+    {
+        UINT64 dummy = 0;
+        context_->End(calib_q);
+        context_->Flush();
+        while (context_->GetData(calib_q, &dummy, sizeof(dummy), 0) == S_FALSE) { 
+            Sleep(0); 
+        }
+    }
+
+    context_->Begin(disj_q);
+    auto cpu_now = PlatformTime::Now();
+    context_->End(calib_q);
+    context_->End(disj_q);
+    context_->Flush();
+
+    D3D11_QUERY_DATA_TIMESTAMP_DISJOINT disjoint{};
+    while (context_->GetData(disj_q, &disjoint, sizeof(disjoint), 0) == S_FALSE) { 
+        Sleep(0); 
+    }
+
+    UINT64 gpu_tick = 0;
+    while (context_->GetData(calib_q, &gpu_tick, sizeof(gpu_tick), 0) == S_FALSE) { 
+        Sleep(0); 
+    }
+
+    calib_q->Release();
+    disj_q->Release();
+
+    if (disjoint.Disjoint || disjoint.Frequency == 0) { 
+        return; 
+    }
+
+    base_cpu_ns_   = 0;
+    base_gpu_tick_ = gpu_tick;
 }
 
-void D3D11GpuProfilerBackend::BeginFrame(int64_t cpu_ref_ns) {
+void D3D11GpuProfilerBackend::BeginFrame() {
     auto& slot       = slots_[write_idx_];
     slot.scope_count = 0;
     slot.scope_depth = 0;
-    slot.cpu_ref_ns  = cpu_ref_ns;
     slot.active      = true;
 
     context_->Begin(slot.disjoint_q);
-    context_->End(slot.frame_start_q);  
 }
 
 void D3D11GpuProfilerBackend::EndFrame() {
@@ -116,16 +153,6 @@ std::vector<ScopeRecord> D3D11GpuProfilerBackend::CollectFrame() {
         return {};
     }
 
-    UINT64 frame_start_tick = 0;
-    hr = context_->GetData(
-        slot.frame_start_q, &frame_start_tick, sizeof(frame_start_tick), D3D11_ASYNC_GETDATA_DONOTFLUSH);
-    if (hr != S_OK) {
-        return {};
-    }
-
-    double freq      = static_cast<double>(disjoint.Frequency);
-    double offset_ns = static_cast<double>(slot.cpu_ref_ns) - (frame_start_tick / freq * 1e9);
-
     std::vector<ScopeRecord> results;
     results.reserve(slot.scope_count);
 
@@ -141,8 +168,9 @@ std::vector<ScopeRecord> D3D11GpuProfilerBackend::CollectFrame() {
             continue;
         }
 
-        int64_t start_ns = static_cast<int64_t>(begin_tick / freq * 1e9 + offset_ns);
-        int64_t end_ns   = static_cast<int64_t>(end_tick   / freq * 1e9 + offset_ns);
+        double  freq     = static_cast<double>(disjoint.Frequency);
+        int64_t start_ns = base_cpu_ns_ + static_cast<int64_t>(static_cast<double>(begin_tick - base_gpu_tick_) / freq * 1e9);
+        int64_t end_ns   = base_cpu_ns_ + static_cast<int64_t>(static_cast<double>(end_tick   - base_gpu_tick_) / freq * 1e9);
         results.push_back({ entry.id, start_ns, end_ns, entry.depth, track_id_ });
     }
 

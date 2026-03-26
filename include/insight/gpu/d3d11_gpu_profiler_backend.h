@@ -19,7 +19,7 @@ public:
     D3D11GpuProfilerBackend& operator=(const D3D11GpuProfilerBackend&) = delete;
 
     void BeginRecording()                    override;
-    void BeginFrame(int64_t cpu_ref_ns)      override;
+    void BeginFrame()                        override;
     void EndFrame()                          override;
     int  BeginScope(const Descriptor& desc)  override;
     void EndScope(int handle)                override;
@@ -38,21 +38,22 @@ private:
     };
 
     struct FrameSlot {
-        ID3D11Query*                                 disjoint_q    = nullptr;
-        ID3D11Query*                                 frame_start_q = nullptr;
+        ID3D11Query*                                 disjoint_q  = nullptr;
         std::array<ScopeEntry, MAX_SCOPES_PER_FRAME> scopes;
-        int                                          scope_count   = 0;
-        int                                          scope_depth   = 0;
-        int64_t                                      cpu_ref_ns    = 0;
-        bool                                         active        = false;
+        int                                          scope_count = 0;
+        int                                          scope_depth = 0;
+        bool                                         active      = false;
     };
 
-    ID3D11Device*        device_    = nullptr;
-    ID3D11DeviceContext* context_   = nullptr;
-    uint32_t             track_id_  = 0;
+    ID3D11Device*        device_         = nullptr;
+    ID3D11DeviceContext* context_        = nullptr;
+    uint32_t             track_id_       = 0;
     FrameSlot            slots_[FRAME_LATENCY];
-    int                  write_idx_ = 0;
-    int                  frame_num_ = 0;
+    int                  write_idx_      = 0;
+    int                  frame_num_      = 0;
+
+    int64_t              base_cpu_ns_    = 0;
+    UINT64               base_gpu_tick_  = 0;
 };
 
 } // namespace insight

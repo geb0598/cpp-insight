@@ -1,5 +1,7 @@
 #pragma once
 
+#include <mutex>
+
 #include "insight/transport.h"
 
 namespace insight {
@@ -83,6 +85,7 @@ public:
 
 private:
     UniquePipeHandle handle_;
+    std::mutex       mutex_;
 };
 
 // -------------------------------------------------
@@ -105,6 +108,7 @@ private:
     void CleanUp();
 
     UniquePipeHandle handle_;
+    std::mutex       mutex_;
 };
 
 

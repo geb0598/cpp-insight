@@ -1,3 +1,4 @@
+#define NOMINMAX
 #include <imgui.h>
 #include <implot.h>
 
@@ -40,9 +41,15 @@ void TimelinePanel::Render() {
 
             ImPlot::SetupAxes(nullptr, "Time (ms)", ImPlotAxisFlags_AutoFit | ImPlotAxisFlags_NoLabel, ImPlotAxisFlags_None);
             ImPlot::SetupAxisLimits(ImAxis_Y1, 0.0, max_time * 1.2, ImPlotCond_Always);
-            
+
+            constexpr float BAR_MAX_PX = 8.0f;
+            ImVec2 plot_size = ImPlot::GetPlotSize();
+            double bar_size  = (count > 0 && plot_size.x > 0)
+                ? std::min(0.67, static_cast<double>(BAR_MAX_PX) / (plot_size.x / count))
+                : 0.67;
+
             ImPlot::SetNextFillStyle(ImVec4(0.3f, 0.3f, 0.3f, 1.0f));
-            ImPlot::PlotBars("Unaccounted (Overhead)", summary.total_frame_ms.data(), count);
+            ImPlot::PlotBars("Unaccounted (Overhead)", summary.total_frame_ms.data(), count, bar_size);
 
             std::vector<std::pair<Descriptor::Id, const std::vector<float>*>> track_list;
             for (const auto& kv : summary.tracks) {
@@ -64,7 +71,7 @@ void TimelinePanel::Render() {
                 const char* name = d ? d->GetName().c_str() : "Unknown";
 
                 ImPlot::SetNextFillStyle(GetColorFromId(id));
-                ImPlot::PlotBars(name, cum_arrays[t].data(), count);
+                ImPlot::PlotBars(name, cum_arrays[t].data(), count, bar_size);
             }
 
             double b = static_cast<double>(context.timeline_begin);
