@@ -33,20 +33,25 @@ void TimelinePanel::Render() {
     ImGui::Text("Selected Frame Range: [%zu ~ %zu]", context.timeline_begin, context.timeline_end);
 
     if (count > 0) {
-        if (ImPlot::BeginPlot("##TimelinePlot", ImVec2(-1, -1), ImPlotFlags_NoMenus | ImPlotFlags_NoLegend)) {
+        if (ImPlot::BeginPlot("##TimelinePlot", ImVec2(-1, -1), ImPlotFlags_NoLegend | ImPlotFlags_NoMenus)) {
             float max_time = 1.0f;
             if (count > 0) {
                 max_time = *std::max_element(summary.total_frame_ms.begin(), summary.total_frame_ms.end());
             }
 
-            ImPlot::SetupAxes(nullptr, "Time (ms)", ImPlotAxisFlags_AutoFit | ImPlotAxisFlags_NoLabel, ImPlotAxisFlags_None);
+            ImPlot::SetupAxes(nullptr, "Time (ms)", ImPlotAxisFlags_NoLabel, ImPlotAxisFlags_None);
             ImPlot::SetupAxisLimits(ImAxis_Y1, 0.0, max_time * 1.2, ImPlotCond_Always);
 
-            constexpr float BAR_MAX_PX = 8.0f;
+            if (reset_view_) {
+                ImPlot::SetupAxisLimits(ImAxis_X1, -0.5, count - 0.5, ImPlotCond_Always);
+                reset_view_ = false;
+            }
+
+            constexpr float BAR_MAX_PX = 12.0f;
             ImVec2 plot_size = ImPlot::GetPlotSize();
             double bar_size  = (count > 0 && plot_size.x > 0)
-                ? std::min(0.67, static_cast<double>(BAR_MAX_PX) / (plot_size.x / count))
-                : 0.67;
+                ? std::min(0.85, static_cast<double>(BAR_MAX_PX) / (plot_size.x / count))
+                : 0.85;
 
             ImPlot::SetNextFillStyle(ImVec4(0.3f, 0.3f, 0.3f, 1.0f));
             ImPlot::PlotBars("Unaccounted (Overhead)", summary.total_frame_ms.data(), count, bar_size);
@@ -153,6 +158,8 @@ void TimelinePanel::Render() {
     ImGui::EndChild();
 }
 
-void TimelinePanel::Reset() {}
+void TimelinePanel::Reset() {
+    reset_view_ = true;
+}
 
 } // namespace insight::viewer

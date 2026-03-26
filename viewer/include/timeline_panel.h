@@ -15,6 +15,9 @@ public:
 
     void Render() override;
     void Reset()  override;
+
+private:
+    bool reset_view_ = true;
 };
 
 } // namespace insight::viewer
