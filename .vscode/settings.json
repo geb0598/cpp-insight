@@ -1,0 +1,6 @@
+{
+    "cmake.buildDirectory": "${workspaceFolder}/build/${buildPreset}",
+    "cmake.launchConfig": {
+        "cwd": "${command:cmake.buildDirectory}/viewer/${buildType}"
+    }
+}
