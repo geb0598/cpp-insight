@@ -88,6 +88,11 @@ if(INSIGHTS_BUILD_TESTS)
 
     target_include_directories(insights-test PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src)
 
+    target_compile_definitions(insights-test
+        PRIVATE
+            INSIGHTS
+    )
+
     target_link_libraries(insights-test
         PRIVATE
             cpp-insights-core
