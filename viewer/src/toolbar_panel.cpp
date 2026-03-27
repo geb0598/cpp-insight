@@ -79,7 +79,7 @@ void ToolbarPanel::Render() {
     switch (context.server_state) {
 
         case ServerState::OFFLINE:
-            if (ImGui::Button(ICON_FA_PLAY "  Start")) {
+            if (ImGui::Button(ICON_FA_PLAY "  Connect")) {
                 server.Listen();
                 context.server_state = ServerState::LISTENING;
             }
