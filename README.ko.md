@@ -97,7 +97,7 @@ Viewer는 `build/release/viewer/Release/cpp-insights-viewer.exe`에 생성됩니
 **1단계 — Stat group 및 stat 선언** (임의의 번역 단위에서 1회)
 
 ```cpp
-#include "insights/insight.h"
+#include "insights/insights.h"
 
 INSIGHTS_DECLARE_STATGROUP("Rendering",  GRenderGroup);
 
@@ -109,14 +109,14 @@ INSIGHTS_DECLARE_STAT("Shadow Pass", GShadowStat,     GRenderGroup);
 
 ```cpp
 // CPU 프로파일링만
-#include "insights/insight.h"
+#include "insights/insights.h"
 
 INSIGHTS_INITIALIZE();
 ```
 
 ```cpp
-// D3D11 GPU 프로파일링 포함 — insight.h 대신 insight_d3d11.h를 include
-#include "insights/insight_d3d11.h"
+// D3D11 GPU 프로파일링 포함 — insights.h 대신 insights_d3d11.h를 include
+#include "insights/insights_d3d11.h"
 
 INSIGHTS_GPU_INIT_D3D11(pDevice, pContext);  // INSIGHTS_INITIALIZE 전에 호출
 INSIGHTS_INITIALIZE();

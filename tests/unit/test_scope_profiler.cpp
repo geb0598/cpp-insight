@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
 
-#include "insights/insight.h"
+#include "insights/insights.h"
 
 namespace {
 

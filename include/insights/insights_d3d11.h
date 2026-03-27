@@ -1,7 +1,7 @@
 #pragma once
 
 // Core
-#include "insight.h"
+#include "insights.h"
 
 // GPU
 #if defined(INSIGHTS_GPU)

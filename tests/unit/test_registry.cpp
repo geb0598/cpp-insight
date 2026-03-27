@@ -1,6 +1,6 @@
 // tests/src/test_stat_registry.cpp
 #include <gtest/gtest.h>
-#include "insights/insight.h"
+#include "insights/insights.h"
 
 namespace {
 

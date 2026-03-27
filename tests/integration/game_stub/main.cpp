@@ -5,7 +5,7 @@
 #include <thread>
 #include <vector>
 
-#include "insights/insight.h"
+#include "insights/insights.h"
 #include "insights/gpu/gpu_profiler.h"
 #include "insights/gpu/gpu_profiler_backend.h"
 

@@ -1,7 +1,7 @@
 // tests/src/test_reporter.cpp
 #include <gtest/gtest.h>
 #include <thread>
-#include "insights/insight.h"
+#include "insights/insights.h"
 #include "insights/reporter.h"
 
 namespace {

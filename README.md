@@ -97,7 +97,7 @@ The viewer will be at `build/release/viewer/Release/cpp-insights-viewer.exe`.
 **Step 1 — Declare stat groups and stats** (once, in any translation unit)
 
 ```cpp
-#include "insights/insight.h"
+#include "insights/insights.h"
 
 INSIGHTS_DECLARE_STATGROUP("Rendering",  GRenderGroup);
 
@@ -109,14 +109,14 @@ INSIGHTS_DECLARE_STAT("Shadow Pass", GShadowStat,     GRenderGroup);
 
 ```cpp
 // CPU profiling only
-#include "insights/insight.h"
+#include "insights/insights.h"
 
 INSIGHTS_INITIALIZE();
 ```
 
 ```cpp
-// With D3D11 GPU profiling — include insight_d3d11.h instead of insight.h
-#include "insights/insight_d3d11.h"
+// With D3D11 GPU profiling — include insights_d3d11.h instead of insights.h
+#include "insights/insights_d3d11.h"
 
 INSIGHTS_GPU_INIT_D3D11(pDevice, pContext);  // must be called before INSIGHTS_INITIALIZE
 INSIGHTS_INITIALIZE();

@@ -13,7 +13,7 @@
 #pragma comment(lib, "d3d11.lib")
 #pragma comment(lib, "d3dcompiler.lib")
 
-#include "insights/insight_d3d11.h"
+#include "insights/insights_d3d11.h"
 
 // ---------------------------------------------------
 // Stat declarations
