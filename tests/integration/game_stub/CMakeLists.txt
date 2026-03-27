@@ -10,5 +10,6 @@ target_link_libraries(game-stub
 
 target_compile_definitions(game-stub
     PRIVATE
+        INSIGHTS
         INSIGHTS_GPU
 )

@@ -10,5 +10,6 @@ target_link_libraries(gpu-stub
 
 target_compile_definitions(gpu-stub
     PRIVATE
+        INSIGHTS
         INSIGHTS_GPU
 )

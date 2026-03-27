@@ -1,4 +1,4 @@
-#define WIN32_LEAN_AND_MEAN
+﻿#define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
 #include <d3d11.h>
 #include <d3dcompiler.h>
@@ -197,7 +197,7 @@ int main() {
         { {  0.5f, -0.5f, 0.0f }, { 0.0f, 1.0f, 0.0f, 1.0f } },
         { { -0.5f, -0.5f, 0.0f }, { 0.0f, 0.0f, 1.0f, 1.0f } }
     };
-
+ 
     // Cube
     Vertex cube_vertices[] = {
         { { -1.0f,  1.0f, -1.0f }, { 0.0f, 1.0f, 1.0f, 1.0f } },
@@ -411,6 +411,6 @@ int main() {
         INSIGHTS_FRAME_END();
     }
 
-    insights::Client::GetInstance().Disconnect();
+    INSIGHTS_SHUTDOWN();
     return 0;
 }

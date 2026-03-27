@@ -1,11 +1,13 @@
 #pragma once
 
+#ifdef INSIGHTS
+
 // Core
 #include "insights/client.h"
 #include "insights/scope_profiler.h"
 #include "insights/registry.h"
 
-// GPU 
+// GPU
 #if defined(INSIGHTS_GPU)
 #include "insights/gpu/gpu_profiler.h"
 #endif
@@ -93,3 +95,17 @@
 
 #define INSIGHTS_SHUTDOWN() \
     insights::Client::GetInstance().Disconnect()
+
+#else // INSIGHTS 
+
+#define INSIGHTS_DECLARE_STATGROUP(display_name, variable_name)
+#define INSIGHTS_DECLARE_STAT(display_name, variable_name, group)
+#define INSIGHTS_GPU_INIT_D3D11(device, context)
+#define INSIGHTS_GPU_SCOPE(stat)
+#define INSIGHTS_INITIALIZE()
+#define INSIGHTS_SHUTDOWN()
+#define INSIGHTS_SCOPE(stat)
+#define INSIGHTS_FRAME_BEGIN()
+#define INSIGHTS_FRAME_END()
+
+#endif // INSIGHTS
