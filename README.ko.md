@@ -109,10 +109,16 @@ INSIGHTS_DECLARE_STAT("Shadow Pass", GShadowStat,     GRenderGroup);
 
 ```cpp
 // CPU 프로파일링만
-INSIGHTS_INITIALIZE();
+#include "insights/insight.h"
 
-// D3D11 GPU 프로파일링 포함
-INSIGHTS_GPU_INIT_D3D11(pDevice, pContext);
+INSIGHTS_INITIALIZE();
+```
+
+```cpp
+// D3D11 GPU 프로파일링 포함 — insight.h 대신 insight_d3d11.h를 include
+#include "insights/insight_d3d11.h"
+
+INSIGHTS_GPU_INIT_D3D11(pDevice, pContext);  // INSIGHTS_INITIALIZE 전에 호출
 INSIGHTS_INITIALIZE();
 ```
 

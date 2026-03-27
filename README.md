@@ -109,10 +109,16 @@ INSIGHTS_DECLARE_STAT("Shadow Pass", GShadowStat,     GRenderGroup);
 
 ```cpp
 // CPU profiling only
-INSIGHTS_INITIALIZE();
+#include "insights/insight.h"
 
-// With D3D11 GPU profiling
-INSIGHTS_GPU_INIT_D3D11(pDevice, pContext);
+INSIGHTS_INITIALIZE();
+```
+
+```cpp
+// With D3D11 GPU profiling — include insight_d3d11.h instead of insight.h
+#include "insights/insight_d3d11.h"
+
+INSIGHTS_GPU_INIT_D3D11(pDevice, pContext);  // must be called before INSIGHTS_INITIALIZE
 INSIGHTS_INITIALIZE();
 ```
 
