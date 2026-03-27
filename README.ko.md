@@ -42,9 +42,9 @@
 
 **① Toolbar** — 실행 중인 클라이언트와의 연결을 관리하고, 녹화 시작/종료 및 세션 저장/불러오기를 제공합니다.
 
-**② Real-time Frame Monitor** — 녹화 중 실시간으로 업데이트되는 스크롤 프레임 타임 그래프입니다. 히치와 프레임 페이싱 문제를 즉시 포착할 수 있습니다.
+**② Real-time Frame Monitor** — 녹화 중 실시간으로 업데이트되는 스크롤 프레임 타임 그래프입니다. hitch와 frame pacing 문제를 즉시 포착할 수 있습니다.
 
-**③ Frame Timeline** — stat별 프레임 단위 타이밍을 표시합니다. 실시간 그래프에서 임의의 프레임을 선택하여 시간이 어디서 소비됐는지 확인할 수 있습니다.
+**③ Frame Timeline** — 각 프레임의 실행 시간을 히스토그램 형식으로 표시합니다. 두 개의 바(Bar)를 조절하여 원하는 프레임 구간을 설정할 수 있으며, 선택된 구간에 대한 상세 통계가 하단의 ⑤ Call Stack 패널에 실시간으로 반영됩니다.
 
 **④ Flame Graph** — 전체 녹화 구간에 걸친 CPU & GPU scope 계층 시각화입니다. scope 위에 마우스를 올리면 이름, 소요 시간, 깊이, 프레임 번호를 확인할 수 있습니다.
 
@@ -94,7 +94,7 @@ Viewer는 `build/release/viewer/Release/cpp-insights-viewer.exe`에 생성됩니
 
 ## Usage
 
-**1단계 — Stat group 및 stat 선언** (임의의 번역 단위에서 1회)
+**1단계 — Stat group 및 stat 선언** (임의의 translation unit에서 1회)
 
 ```cpp
 #include "insights/insights.h"

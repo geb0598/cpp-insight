@@ -44,7 +44,7 @@
 
 **② Real-time Frame Monitor** — Scrolling frame time graph that updates live during recording. Useful for spotting hitches and frame pacing issues as they happen.
 
-**③ Frame Timeline** — Displays per-stat timing broken down by frame. Select any frame from the realtime graph to inspect exactly where time was spent.
+**③ Frame Timeline** — Displays frame execution times in a histogram format. Users can adjust two draggable bars to define a specific frame range, which updates the data displayed in the ⑤ Call Stack panel.
 
 **④ Flame Graph** — Hierarchical CPU & GPU scope visualization across all recorded frames. Hover any scope to see its name, duration, depth, and frame number.
 
