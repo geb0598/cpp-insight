@@ -52,7 +52,6 @@ private:
     int                  write_idx_      = 0;
     int                  frame_num_      = 0;
 
-    int64_t              base_cpu_ns_    = 0;
     UINT64               base_gpu_tick_  = 0;
 };
 

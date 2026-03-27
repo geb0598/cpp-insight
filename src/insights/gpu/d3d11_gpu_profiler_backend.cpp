@@ -2,8 +2,6 @@
 #include <atomic>
 
 #include "insights/gpu/d3d11_gpu_profiler_backend.h"
-#include "insights/platform_time.h"
-#include "insights/scope_profiler.h"
 
 namespace insights {
 
@@ -23,10 +21,14 @@ D3D11GpuProfilerBackend::D3D11GpuProfilerBackend(ID3D11Device* device, ID3D11Dev
     D3D11_QUERY_DESC timestamp_desc = { D3D11_QUERY_TIMESTAMP,          0 };
 
     for (auto& slot : slots_) {
-        device_->CreateQuery(&disjoint_desc, &slot.disjoint_q);
+        if (FAILED(device_->CreateQuery(&disjoint_desc, &slot.disjoint_q))) {
+            return;
+        }
         for (auto& scope : slot.scopes) {
-            device_->CreateQuery(&timestamp_desc, &scope.begin_q);
-            device_->CreateQuery(&timestamp_desc, &scope.end_q);
+            if (FAILED(device_->CreateQuery(&timestamp_desc, &scope.begin_q)) ||
+                FAILED(device_->CreateQuery(&timestamp_desc, &scope.end_q))) {
+                return;
+            }
         }
     }
 }
@@ -72,7 +74,6 @@ void D3D11GpuProfilerBackend::BeginRecording() {
     }
 
     context_->Begin(disj_q);
-    auto cpu_now = PlatformTime::Now();
     context_->End(calib_q);
     context_->End(disj_q);
     context_->Flush();
@@ -94,7 +95,6 @@ void D3D11GpuProfilerBackend::BeginRecording() {
         return; 
     }
 
-    base_cpu_ns_   = 0;
     base_gpu_tick_ = gpu_tick;
 }
 
@@ -169,8 +169,8 @@ std::vector<ScopeRecord> D3D11GpuProfilerBackend::CollectFrame() {
         }
 
         double  freq     = static_cast<double>(disjoint.Frequency);
-        int64_t start_ns = base_cpu_ns_ + static_cast<int64_t>(static_cast<double>(begin_tick - base_gpu_tick_) / freq * 1e9);
-        int64_t end_ns   = base_cpu_ns_ + static_cast<int64_t>(static_cast<double>(end_tick   - base_gpu_tick_) / freq * 1e9);
+        int64_t start_ns = static_cast<int64_t>(static_cast<double>(begin_tick - base_gpu_tick_) / freq * 1e9);
+        int64_t end_ns   = static_cast<int64_t>(static_cast<double>(end_tick   - base_gpu_tick_) / freq * 1e9);
         results.push_back({ entry.id, start_ns, end_ns, entry.depth, track_id_ });
     }
 
