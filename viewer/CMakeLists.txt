@@ -72,3 +72,11 @@ target_link_libraries(cpp-insights-viewer
         implot
         imgui
 )
+
+if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/data/JetBrainsMonoNerdFont-Regular.ttf")
+    add_custom_command(TARGET cpp-insights-viewer POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            "${CMAKE_CURRENT_SOURCE_DIR}/data/JetBrainsMonoNerdFont-Regular.ttf"
+            "$<TARGET_FILE_DIR:cpp-insights-viewer>/JetBrainsMonoNerdFont-Regular.ttf"
+    )
+endif()
