@@ -14,9 +14,9 @@ namespace insights::viewer {
 namespace {
 
 static const ImGuiTableFlags TABLE_FLAGS =
-    ImGuiTableFlags_BordersV | ImGuiTableFlags_BordersOuterH |
-    ImGuiTableFlags_RowBg    | ImGuiTableFlags_Resizable     |
-    ImGuiTableFlags_NoBordersInBody;
+    ImGuiTableFlags_BordersV        | ImGuiTableFlags_BordersOuterH |
+    ImGuiTableFlags_RowBg           | ImGuiTableFlags_Resizable     |
+    ImGuiTableFlags_NoBordersInBody | ImGuiTableFlags_Hideable;
 
 } // namespace
 
@@ -103,12 +103,15 @@ void StackPanel::DrawTrackSection(uint32_t track_id, size_t begin, size_t end,
         std::sort(children.begin(), children.end(), sort_desc);
     }
 
-    if (ImGui::BeginTable(table_id, 5, TABLE_FLAGS)) {
+    if (ImGui::BeginTable(table_id, 8, TABLE_FLAGS)) {
         ImGui::TableSetupColumn("Function / Scope", ImGuiTableColumnFlags_WidthStretch);
         ImGui::TableSetupColumn("Count",            ImGuiTableColumnFlags_WidthFixed, 50.0f);
-        ImGui::TableSetupColumn("Incl. Avg (ms)",  ImGuiTableColumnFlags_WidthFixed, 100.0f);
-        ImGui::TableSetupColumn("Excl. Avg (ms)",  ImGuiTableColumnFlags_WidthFixed, 100.0f);
-        ImGui::TableSetupColumn("Incl. Max (ms)",  ImGuiTableColumnFlags_WidthFixed, 100.0f);
+        ImGui::TableSetupColumn("Incl. Avg (ms)",   ImGuiTableColumnFlags_WidthFixed, 90.0f);
+        ImGui::TableSetupColumn("Excl. Avg (ms)",   ImGuiTableColumnFlags_WidthFixed, 90.0f);
+        ImGui::TableSetupColumn("Incl. Max (ms)",   ImGuiTableColumnFlags_WidthFixed, 90.0f);
+        ImGui::TableSetupColumn("Incl. Min (ms)",   ImGuiTableColumnFlags_WidthFixed | ImGuiTableColumnFlags_DefaultHide, 90.0f);
+        ImGui::TableSetupColumn("Incl. P95 (ms)",   ImGuiTableColumnFlags_WidthFixed | ImGuiTableColumnFlags_DefaultHide, 90.0f);
+        ImGui::TableSetupColumn("Incl. P99 (ms)",   ImGuiTableColumnFlags_WidthFixed | ImGuiTableColumnFlags_DefaultHide, 90.0f);
         ImGui::TableHeadersRow();
         for (const auto* root : roots) {
             DrawNode(root, tree);
@@ -158,6 +161,21 @@ void StackPanel::DrawNode(const StackSummary* node,
 
     ImGui::TableNextColumn();
     ImGui::TextColored(ImVec4(1.0f, 0.6f, 0.6f, 1.0f), "%.3f", node->inclusive.max_ms);
+
+    ImGui::TableNextColumn();
+    ImGui::Text("%.3f", node->inclusive.min_ms);
+
+    ImGui::TableNextColumn();
+    if (node->inclusive.p95_ms.has_value())
+        ImGui::Text("%.3f", *node->inclusive.p95_ms);
+    else
+        ImGui::TextDisabled("-");
+
+    ImGui::TableNextColumn();
+    if (node->inclusive.p99_ms.has_value())
+        ImGui::Text("%.3f", *node->inclusive.p99_ms);
+    else
+        ImGui::TextDisabled("-");
 
     if (is_open) {
         if (has_children) {
