@@ -94,35 +94,45 @@ Viewer는 `build/release/viewer/Release/cpp-insights-viewer.exe`에 생성됩니
 
 ## Usage
 
-**1단계 — Stat group 및 stat 선언** (임의의 translation unit에서 1회)
+**1단계 — 헤더 선택**
+
+GPU 프로파일링 사용 여부에 따라 include할 헤더를 선택합니다:
 
 ```cpp
+// CPU 프로파일링만
 #include "insights/insights.h"
+```
 
+```cpp
+// D3D11 GPU 프로파일링 포함 — insights.h 대신 이 헤더를 사용
+#include "insights/insights_d3d11.h"
+```
+
+> insights 매크로를 사용하는 모든 translation unit에서 동일한 헤더를 일관되게 include하세요.
+
+**2단계 — Stat group 및 stat 선언** (임의의 translation unit에서 1회)
+
+```cpp
 INSIGHTS_DECLARE_STATGROUP("Rendering",  GRenderGroup);
 
 INSIGHTS_DECLARE_STAT("Draw Calls",  GDrawCallsStat,  GRenderGroup);
 INSIGHTS_DECLARE_STAT("Shadow Pass", GShadowStat,     GRenderGroup);
 ```
 
-**2단계 — 시작 시 초기화**
+**3단계 — 시작 시 초기화**
 
 ```cpp
 // CPU 프로파일링만
-#include "insights/insights.h"
-
 INSIGHTS_INITIALIZE();
 ```
 
 ```cpp
-// D3D11 GPU 프로파일링 포함 — insights.h 대신 insights_d3d11.h를 include
-#include "insights/insights_d3d11.h"
-
+// D3D11 GPU 프로파일링 포함
 INSIGHTS_GPU_INIT_D3D11(pDevice, pContext);  // INSIGHTS_INITIALIZE 전에 호출
 INSIGHTS_INITIALIZE();
 ```
 
-**3단계 — 프레임 루프 계측**
+**4단계 — 프레임 루프 계측**
 
 ```cpp
 while (running) {
@@ -159,7 +169,7 @@ while (running) {
 > }
 > ```
 
-**4단계 — 종료**
+**5단계 — 종료**
 
 ```cpp
 INSIGHTS_SHUTDOWN();

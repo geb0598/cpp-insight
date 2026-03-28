@@ -94,35 +94,45 @@ The viewer will be at `build/release/viewer/Release/cpp-insights-viewer.exe`.
 
 ## Usage
 
-**Step 1 — Declare stat groups and stats** (once, in any translation unit)
+**Step 1 — Include the appropriate header**
+
+Choose based on whether you need GPU profiling:
 
 ```cpp
+// CPU profiling only
 #include "insights/insights.h"
+```
 
+```cpp
+// With D3D11 GPU profiling — use this header instead of insights.h
+#include "insights/insights_d3d11.h"
+```
+
+> Use the same header consistently across all translation units that reference insights macros.
+
+**Step 2 — Declare stat groups and stats** (once, in any translation unit)
+
+```cpp
 INSIGHTS_DECLARE_STATGROUP("Rendering",  GRenderGroup);
 
 INSIGHTS_DECLARE_STAT("Draw Calls",  GDrawCallsStat,  GRenderGroup);
 INSIGHTS_DECLARE_STAT("Shadow Pass", GShadowStat,     GRenderGroup);
 ```
 
-**Step 2 — Initialize at startup**
+**Step 3 — Initialize at startup**
 
 ```cpp
 // CPU profiling only
-#include "insights/insights.h"
-
 INSIGHTS_INITIALIZE();
 ```
 
 ```cpp
-// With D3D11 GPU profiling — include insights_d3d11.h instead of insights.h
-#include "insights/insights_d3d11.h"
-
+// With D3D11 GPU profiling
 INSIGHTS_GPU_INIT_D3D11(pDevice, pContext);  // must be called before INSIGHTS_INITIALIZE
 INSIGHTS_INITIALIZE();
 ```
 
-**Step 3 — Instrument your frame loop**
+**Step 4 — Instrument your frame loop**
 
 ```cpp
 while (running) {
@@ -159,7 +169,7 @@ while (running) {
 > }
 > ```
 
-**Step 4 — Shutdown**
+**Step 5 — Shutdown**
 
 ```cpp
 INSIGHTS_SHUTDOWN();
